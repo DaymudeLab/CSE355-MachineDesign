@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "asu_theory_of_cs"
+version = "0.0.1"
+authors = [
+  { name="Saajan Maslanka", email="academia@saajanm.com" },
+]
+description = "A python library for simulating and evaluating automata and generating expressions as found in Michael Sipser's Theory of Computation."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "matplotlib",
+    "pillow",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/SaajanM/asu-theory-of-cs"
+"Bug Tracker" = "https://github.com/SaajanM/asu-theory-of-cs/issues"
