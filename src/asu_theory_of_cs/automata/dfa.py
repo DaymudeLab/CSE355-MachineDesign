@@ -1,5 +1,5 @@
 from typing import Callable, Dict, Set, Tuple
-from asu_theory_of_cs_grading.automata.base import _Automata
+from asu_theory_of_cs.automata.base import _Automata
 from itertools import product
 from .. import registry
 
