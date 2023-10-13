@@ -1,7 +1,7 @@
-from typing import Callable, Dict, Set, Tuple
+from collections import defaultdict
+from typing import Dict, Set, Tuple
 from asu_theory_of_cs.automata.base import _Automata
 from itertools import product
-from .. import registry
 
 
 class _DFA(_Automata):
@@ -49,38 +49,36 @@ class _DFA(_Automata):
             raise RuntimeError("F not a subset of in Q")
 
     def display(self) -> str:
-        res = 'strict digraph {rankdir="LR";'
-        for state in self.states:
-            if state == self.start_state:
-                continue
-            res += '"{}" [shape={}];'.format(
-                state, "doublecircle" if state in self.final_states else "circle"
-            )
-        for (from_state, input_symbol), to_state in self.transition_table.items():
-            res += '"{}" -> "{}" [label="{}"];'.format(
-                from_state, to_state, input_symbol
-            )
-        res += 'subgraph cluster {rankdir="LR";peripheries=0;'
+        res = 'digraph {rankdir="LR";ranksep=0.2;edge[minlen=3];'
+        res += 'subgraph cluster {edge[minlen=default];rankdir="LR";peripheries=0;'
         res += 'n0 [label= "", shape=none,height=.0,width=.0];'
         res += '"{}" [shape={}];'.format(
             self.start_state,
             "doublecircle" if self.start_state in self.final_states else "circle",
         )
         res += 'n0 -> "{}"'.format(self.start_state)
-        res += "}}"
+        res += "};"
+        for state in self.states:
+            if state == self.start_state:
+                continue
+            res += '"{}" [shape={}];'.format(
+                state, "doublecircle" if state in self.final_states else "circle"
+            )
+        tt_restructured: defaultdict[Tuple[str, str], list[str]] = defaultdict(list)
+
+        for (from_state, input_symbol), to_state in self.transition_table.items():
+            tt_restructured[(from_state, to_state)].append(input_symbol)
+
+        for (from_state, to_state), transition_list in tt_restructured.items():
+            label = "{}".format(transition_list[0])
+            for i, input_symbol in enumerate(transition_list):
+                if i == 0:
+                    continue
+                label += ","
+                if i % 3 == 2:
+                    label += "\n"
+                label += "{}".format(transition_list[i])
+            res += '"{}" -> "{}" [label="{}"];'.format(from_state, to_state, label)
+
+        res += "}"
         return res
-
-
-DeclareDFAArgType = Callable[
-    [], Tuple[Set[str], Set[str], Dict[Tuple, str], str, Set[str]]
-]
-
-
-def _DeclareDFA(problem: str, render=False) -> Callable[[DeclareDFAArgType], None]:
-    def inner(defintion: DeclareDFAArgType) -> None:
-        dfa = _DFA(*defintion())
-        if render:
-            dfa.render()
-        registry.automata_registry[problem] = dfa
-
-    return inner

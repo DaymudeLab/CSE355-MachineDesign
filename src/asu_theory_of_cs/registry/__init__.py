@@ -1,6 +1,6 @@
 from typing import Dict
 
-from ..automata.base import _Automata
+from ..automata.dfa import _DFA
 
 
-automata_registry:Dict[str,_Automata] = {}
+dfa_registry:Dict[str,_DFA] = {}

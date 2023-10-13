@@ -29,7 +29,6 @@ class _Automata(ABC):
         pillow_img = Image.open(img_raw)
         gray = ImageOps.grayscale(pillow_img)
         img = np.asarray(gray)
-        print(img.shape)
         plt.grid(False)
         plt.axis('off') 
         plt.imshow(img, cmap="gray")
