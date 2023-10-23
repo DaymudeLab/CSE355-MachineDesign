@@ -1,1 +1,1 @@
-from .decorators import _DeclareDFA
+from .dfa import _DFA as DFA

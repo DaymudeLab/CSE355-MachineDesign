@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "asu_theory_of_cs"
-version = "0.0.2-alpha"
+version = "0.0.3-alpha"
 authors = [
   { name="Saajan Maslanka", email="academia@saajanm.com" },
 ]

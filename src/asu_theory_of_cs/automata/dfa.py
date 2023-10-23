@@ -1,72 +1,127 @@
 from collections import defaultdict
-from typing import Dict, Set, Tuple
+from typing import Dict, Set, Tuple, Union
 from asu_theory_of_cs.automata.base import _Automata
 from itertools import product
+from asu_theory_of_cs.errors import DetailedError
+from asu_theory_of_cs import registry
 
 
 class _DFA(_Automata):
-    transition_table: Dict[Tuple[str, str], str]
-    final_states: Set[str]
+    _transition_table: Dict[Tuple[str, str], str]
+    _final_states: Set[str]
 
     def __init__(self, Q, Sigma, delta, q0, F) -> None:
-        self.states = Q
-        self.input_symbols = Sigma
-        self.transition_table = delta
-        self.start_state = q0
-        self.final_states = F
+        self._states = Q
+        self._input_symbols = Sigma
+        self._transition_table = delta
+        self._start_state = q0
+        self._final_states = F
         super().__init__()
 
-    def verify(self) -> None:
+    def verify_legality(self) -> None:
         transitions_valid = True
 
-        for k in self.transition_table:
-            transitions_valid &= k[0] in self.states and k[1] in self.input_symbols
+        err_str = ""
+        for k, v in self._transition_table.items():
+            transition_current_is_state = k[0] in self._states
+            transition_final_is_state = v in self._states
+            transition_input_is_alphabet = k[1] in self._input_symbols
+
+            if not transition_current_is_state:
+                err_str += f'delta has a transition from "{k[0]}" on input "{k[1]}" to "{v}", but "{k[0]}" is not in Q\n'
+            if not transition_input_is_alphabet:
+                err_str += f'delta has a transition from "{k[0]}" on input "{k[1]}" to "{v}", but "{k[1]}" is not in Sigma\n'
+            if not transition_input_is_alphabet:
+                err_str += f'delta has a transition from "{k[0]}" on input "{k[1]}" to "{v}", but "{v}" is not in Q\n'
+
+            transitions_valid &= (
+                transition_current_is_state
+                and transition_input_is_alphabet
+                and transition_final_is_state
+            )
 
         if not transitions_valid:
-            raise RuntimeError(
-                "Delta contains states and/or symbols not found in Q and/or Sigma"
+            raise DetailedError(
+                "(Q, Sigma and/or delta are incorrectly defined)", err_str
             )
 
-        all_entries = set(product(self.states, self.input_symbols))
+        err_str = ""
 
-        # Compute symmetric difference and check if empty
-        diff = all_entries ^ set(self.transition_table.keys())
-        transitions_complete = len(diff) == 0
+        all_entries = set(product(self._states, self._input_symbols))
+
+        # check all entries to make sure transition table is complete
+        transitions_complete = True
+        for necessary_transition in all_entries:
+            transition_found = necessary_transition in self._transition_table.keys()
+            if not transition_found:
+                err_str += f'Based on Q,Sigma, we need a transition from "{necessary_transition[0]}" to some other state on input symbol "{necessary_transition[1]}", but this transition was not found\n'
+            transitions_complete &= transition_found
 
         if not transitions_complete:
-            raise RuntimeError(
-                "The following state symbol pairs are not found in both the transition table and state/symbol declarations\n{}".format(
-                    diff
-                )
+            raise DetailedError(
+                "(Based on the definitions of Q and Sigma, it is the case that delta is missing transitions)",
+                err_str,
             )
 
-        start_valid = self.start_state in self.states
+        start_valid = self._start_state in self._states
         if not start_valid:
-            raise RuntimeError("q_0 not found in Q")
+            raise DetailedError(
+                "(Start state q_0 not found in Q)",
+                f'"{self._start_state}" was not found in Q',
+            )
 
-        final_valid = self.final_states.issubset(self.states)
+        err_str = ""
+        final_valid = True
+        for potential_state in self._final_states:
+            potential_state_valid = potential_state in self._states
+            if not potential_state_valid:
+                err_str += f'"{potential_state}" was declared as a final state, but it is not found in Q\n'
+            final_valid &= potential_state_valid
+        final_valid = self._final_states.issubset(self._states)
         if not final_valid:
-            raise RuntimeError("F not a subset of in Q")
+            raise DetailedError("(F is not a subset of Q)", err_str)
 
-    def display(self) -> str:
+    def evaluate_one_step(self, input_char: str, enable_trace=False) -> None:
+        new_state = self._transition_table[(self.current_state, input_char)]
+        if enable_trace:
+            print(
+                f'Reading input "{input_char}". This causes us to transition from "{self.current_state}" to "{new_state}"'
+            )
+        self.current_state = new_state
+
+    def evaluate(self, input_str: str, enable_trace=False) -> Union[bool, None]:
+        if enable_trace:
+            print(f"Starting at state {self._start_state}")
+        self.current_state = self._start_state
+        for input_char in input_str:
+            self.evaluate_one_step(input_char, enable_trace)
+        is_final = self.current_state in self._final_states
+        accept_str = ("", "accept") if is_final else (" not", "reject")
+        if enable_trace:
+            print(
+                f'Finished reading input. We are now in state "{self.current_state}". This is{accept_str[0]} a final state, so we {accept_str[1]}'
+            )
+        return self.current_state in self._final_states
+
+    def _generate_dot_string(self) -> str:
         res = 'digraph {rankdir="LR";ranksep=0.2;edge[minlen=3];'
-        res += 'subgraph cluster {edge[minlen=default];rankdir="LR";peripheries=0;'
-        res += 'n0 [label= "", shape=none,height=.0,width=.0];'
+        res += 'subgraph cluster {rank=same;edge[minlen=default];rankdir="LR";peripheries=0;'
+        res += 'n0 [label="", shape=none, width=0, height=0];'
         res += '"{}" [shape={}];'.format(
-            self.start_state,
-            "doublecircle" if self.start_state in self.final_states else "circle",
+            self._start_state,
+            "doublecircle" if self._start_state in self._final_states else "circle",
         )
-        res += 'n0 -> "{}"'.format(self.start_state)
+        res += 'n0 -> "{}"'.format(self._start_state)
         res += "};"
-        for state in self.states:
-            if state == self.start_state:
+        for state in self._states:
+            if state == self._start_state:
                 continue
             res += '"{}" [shape={}];'.format(
-                state, "doublecircle" if state in self.final_states else "circle"
+                state, "doublecircle" if state in self._final_states else "circle"
             )
         tt_restructured: defaultdict[Tuple[str, str], list[str]] = defaultdict(list)
 
-        for (from_state, input_symbol), to_state in self.transition_table.items():
+        for (from_state, input_symbol), to_state in self._transition_table.items():
             tt_restructured[(from_state, to_state)].append(input_symbol)
 
         for (from_state, to_state), transition_list in tt_restructured.items():
@@ -82,3 +137,6 @@ class _DFA(_Automata):
 
         res += "}"
         return res
+
+    def submit_as_answer(self, question_number: int):
+        registry.add_to_registry("dfa", question_number, self)

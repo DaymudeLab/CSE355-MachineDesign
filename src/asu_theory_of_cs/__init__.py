@@ -1,1 +1,1 @@
-from .automata import _DeclareDFA as DeclareDFA
+from .automata import DFA
