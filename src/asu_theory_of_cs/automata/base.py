@@ -17,6 +17,31 @@ class _Automata(ABC):
         self.verify_legality()
 
     @abstractmethod
+    def verify_legality(self) -> None:
+        """
+        Verify the basic n-tuple requirements
+        """
+        raise NotImplementedError("Abstract method not callable")
+
+    @abstractmethod
+    def evaluate(self, input_str: str, enable_trace=False) -> Union[bool, None]:
+        """
+        Evaluate the automata on a string
+        """
+        raise NotImplementedError("Abstract method not callable")
+
+    @abstractmethod
+    def submit_as_answer(self, question_number: int) -> None:
+        """
+        Submit this automata as the answer to a given question.
+
+        #### Enter the question number exactly as seen on the homework assignment.
+
+        This overrides any prior calls to this function for the given question.
+        """
+        raise NotImplementedError("Abstract method not callable")
+
+    @abstractmethod
     def _generate_dot_string(self) -> str:
         """
         Display the machine state diagram as a graphviz plot
@@ -37,28 +62,3 @@ class _Automata(ABC):
         plt.axis("off")
         plt.imshow(img, cmap="gray")
         plt.show()
-
-    @abstractmethod
-    def evaluate(self, input_str: str) -> Union[bool, None]:
-        """
-        Evaluate the automata on a string
-        """
-        raise NotImplementedError("Abstract method not callable")
-
-    @abstractmethod
-    def verify_legality(self) -> None:
-        """
-        Verify the basic n-tuple requirements
-        """
-        raise NotImplementedError("Abstract method not callable")
-    
-    @abstractmethod
-    def submit_as_answer(self,question_numer: int) -> None:
-        """
-        Submit this automata as the answer to a given question.
-
-        #### Enter the question number exactly as seen on the homework assignment.
-        
-        This overrides any prior calls to this function for the given question.
-        """
-        raise NotImplementedError("Abstract method not callable")

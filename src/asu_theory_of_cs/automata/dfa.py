@@ -10,10 +10,18 @@ class _DFA(_Automata):
     _transition_table: Dict[Tuple[str, str], str]
     _final_states: Set[str]
 
-    def __init__(self, Q, Sigma, delta, q0, F) -> None:
+    def __init__(
+        self,
+        Q: Set[str],
+        Sigma: Set[str],
+        delta: Dict[Tuple, str],
+        q0: str,
+        F: Set[str],
+    ) -> None:
+        _delta: Dict[Tuple[str, str], str] = delta  # type: ignore
         self._states = Q
         self._input_symbols = Sigma
-        self._transition_table = delta
+        self._transition_table = _delta
         self._start_state = q0
         self._final_states = F
         super().__init__()
@@ -81,27 +89,31 @@ class _DFA(_Automata):
         if not final_valid:
             raise DetailedError("(F is not a subset of Q)", err_str)
 
-    def evaluate_one_step(self, input_char: str, enable_trace=False) -> None:
-        new_state = self._transition_table[(self.current_state, input_char)]
+    def evaluate_one_step(
+        self, input_char: str, current_state: str, enable_trace=False
+    ) -> str:
+        new_state = self._transition_table[(current_state, input_char)]
         if enable_trace:
             print(
-                f'Reading input "{input_char}". This causes us to transition from "{self.current_state}" to "{new_state}"'
+                f'Reading input "{input_char}". This causes us to transition from "{current_state}" to "{new_state}"'
             )
-        self.current_state = new_state
+        return new_state
 
     def evaluate(self, input_str: str, enable_trace=False) -> Union[bool, None]:
         if enable_trace:
-            print(f"Starting at state {self._start_state}")
-        self.current_state = self._start_state
+            print(f'Starting at state "{self._start_state}"')
+        current_state = self._start_state
         for input_char in input_str:
-            self.evaluate_one_step(input_char, enable_trace)
-        is_final = self.current_state in self._final_states
+            current_state = self.evaluate_one_step(
+                input_char, current_state, enable_trace
+            )
+        is_final = current_state in self._final_states
         accept_str = ("", "accept") if is_final else (" not", "reject")
         if enable_trace:
             print(
-                f'Finished reading input. We are now in state "{self.current_state}". This is{accept_str[0]} a final state, so we {accept_str[1]}'
+                f'Finished reading input. We are now in state "{current_state}". This is{accept_str[0]} a final state, so we {accept_str[1]}'
             )
-        return self.current_state in self._final_states
+        return current_state in self._final_states
 
     def _generate_dot_string(self) -> str:
         res = 'digraph {rankdir="LR";ranksep=0.2;edge[minlen=3];'

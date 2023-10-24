@@ -9,9 +9,10 @@ if TYPE_CHECKING:
 
     class _Registry(TypedDict):
         dfa: Dict[str, automata.DFA]
+        nfa: Dict[str, automata.NFA]
 
 
-_registry: _Registry = {"dfa": {}}
+_registry: _Registry = {"dfa": {}, "nfa": {}}
 
 
 def add_to_registry(
@@ -19,5 +20,10 @@ def add_to_registry(
 ) -> None:
     _registry[automata_type][f"Question_{question_number}"] = submission
 
-def get_dfa(question_number: int) -> Union[automata.DFA,None]:
+
+def get_dfa(question_number: int) -> Union[automata.DFA, None]:
     return _registry["dfa"].get(f"Question_{question_number}")
+
+
+def get_nfa(question_number: int) -> Union[automata.NFA, None]:
+    return _registry["nfa"].get(f"Question_{question_number}")

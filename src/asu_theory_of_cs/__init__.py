@@ -1,1 +1,1 @@
-from .automata import DFA
+from .automata import *
