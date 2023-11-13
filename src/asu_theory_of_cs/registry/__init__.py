@@ -44,8 +44,8 @@ def export_submissions() -> None:
         out.write(out_str)
 
 
-def import_submissions() -> None:
-    with open("submissions.json", "r") as in_file:
+def import_submissions(path: str = "submissions.json") -> None:
+    with open(path, "r") as in_file:
         mod_registry = json.load(in_file)
 
     dfas: Dict[str, Dict] = mod_registry["dfa"]
