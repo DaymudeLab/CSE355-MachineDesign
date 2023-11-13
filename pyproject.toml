@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "asu_theory_of_cs"
-version = "0.1.0"
+version = "0.1.1"
 authors = [{ name = "Saajan Maslanka", email = "academia@saajanm.com" }]
 description = "A python library for simulating and evaluating automata and generating expressions as found in Michael Sipser's Theory of Computation."
 readme = "README.md"

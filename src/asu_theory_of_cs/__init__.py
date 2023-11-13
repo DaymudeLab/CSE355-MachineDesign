@@ -1,4 +1,4 @@
 from . import util
-from . import error
+from . import errors
 from .automata import DFA, NFA
 from . import registry
