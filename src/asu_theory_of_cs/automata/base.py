@@ -24,7 +24,7 @@ class _Automata(ABC):
         raise NotImplementedError("Abstract method not callable")
 
     @abstractmethod
-    def evaluate(self, input_str: str, enable_trace=False) -> Union[bool, None]:
+    def evaluate(self, input_str: str, enable_trace=0) -> Union[bool, None]:
         """
         Evaluate the automata on a string
         """
