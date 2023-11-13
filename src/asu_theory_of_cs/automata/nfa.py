@@ -244,3 +244,20 @@ class _NFA(_Automata):
 
     def submit_as_answer(self, question_number: int) -> None:
         registry.add_to_registry("nfa", question_number, self)
+
+    def export_to_dict(self) -> dict:
+        rep = {
+            "type": "nfa",
+            "states": list(self._states),
+            "input_symbols": list(self._input_symbols),
+            "finals": list(self._final_states),
+            "start_state": self._start_state,
+            "delta": list(
+                map(
+                    lambda p: {"from": p[0][0], "to": list(p[1]), "input": p[0][1]},
+                    self._transition_table.items(),
+                )
+            ),
+            "epsilon_char": self._epsilon,
+        }
+        return rep

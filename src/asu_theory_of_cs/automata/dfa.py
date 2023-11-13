@@ -117,3 +117,19 @@ class _DFA(_NFA):
 
     def submit_as_answer(self, question_number: int):
         registry.add_to_registry("dfa", question_number, self)
+
+    def export_to_dict(self) -> dict:
+        rep = {
+            "type": "dfa",
+            "states": list(self._states),
+            "input_symbols": list(self._input_symbols),
+            "finals": list(self._final_states),
+            "start_state": self._start_state,
+            "delta": list(
+                map(
+                    lambda p: {"from": p[0][0], "to": list(p[1]), "input": p[0][1]},
+                    self._transition_table.items(),
+                )
+            ),
+        }
+        return rep

@@ -42,6 +42,38 @@ class _Automata(ABC):
         raise NotImplementedError("Abstract method not callable")
 
     @abstractmethod
+    def export_to_dict(self) -> dict:
+        """
+        In the following Python Dict spec, describe the machine:
+        {
+            "type": "dfa",
+            "states": str[],
+            "input_symbols": str[]
+            "delta": {
+                        "from": str,
+                        "to": str,
+                        "input": str[] //<-- singleton array
+                    }[]
+            "start_state": str,
+            "finals": str[]
+        } |
+        {
+            "type": "nfa",
+            "states": str[],
+            "input_symbols": str[]
+            "delta": {
+                        "from": str,
+                        "to": str[],
+                        "input": str
+                    }[]
+            "start_state": str,
+            "finals": str[],
+            "epsilon_char": str
+        }
+        """
+        raise NotImplementedError("Abstract method not callable")
+
+    @abstractmethod
     def _generate_dot_string(self) -> str:
         """
         Display the machine state diagram as a graphviz plot
