@@ -3,18 +3,18 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "asu_theory_of_cs"
-version = "0.1.1"
+name = "cse355-machine-design"
+version = "0.1.2"
 authors = [{ name = "Saajan Maslanka", email = "academia@saajanm.com" }]
-description = "A python library for simulating and evaluating automata and generating expressions as found in Michael Sipser's Theory of Computation."
+description = "A python library to allow students to complete machine design problems in ASU's CSE 355 Online offering"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 classifiers = [
   "Programming Language :: Python :: 3",
   "Operating System :: OS Independent",
 ]
-dependencies = ["matplotlib", "pillow"]
+dependencies = ["render-html"]
 
 [project.urls]
-"Homepage" = "https://github.com/SaajanM/asu-theory-of-cs"
-"Bug Tracker" = "https://github.com/SaajanM/asu-theory-of-cs/issues"
+"Homepage" = "https://github.com/DaymudeLab/CSE355-MachineDesign"
+"Bug Tracker" = "https://github.com/DaymudeLab/CSE355-MachineDesign/issues"

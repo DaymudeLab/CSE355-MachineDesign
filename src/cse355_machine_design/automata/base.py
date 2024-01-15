@@ -1,11 +1,14 @@
 from abc import ABC, abstractmethod
 from typing import Set, Union
-from PIL import Image, ImageOps
-import matplotlib.pyplot as plt
-import numpy as np
-import urllib.request
-from urllib.parse import quote
-import io
+
+# from PIL import Image, ImageOps
+# import matplotlib.pyplot as plt
+# import numpy as np
+# import urllib.request
+# from urllib.parse import quote
+# import io
+import render_html
+import pathlib
 
 
 class _Automata(ABC):
@@ -81,16 +84,11 @@ class _Automata(ABC):
         raise NotImplementedError("Abstract method not callable")
 
     def display_state_diagram(self) -> None:
-        req_url = "https://image-charts.com/chart?chl={}&cht=gv".format(
-            quote(self._generate_dot_string())
+        html_contents = (
+            '<!doctypehtml><title>Automata Visualization</title><meta content="View your automata in the browser"name=description><script src=https://cdn.jsdelivr.net/npm/@viz-js/viz@3.2.4/lib/viz-standalone.min.js></script><script>Viz.instance().then(function(e){var n=e.renderSVGElement(\''
+            + self._generate_dot_string()
+            + '\');document.getElementById("graph").appendChild(n)})</script><div id=graph></div>'
         )
-        print(req_url)
-        with urllib.request.urlopen(req_url) as url:
-            img_raw = io.BytesIO(url.read())
-        pillow_img = Image.open(img_raw)
-        gray = ImageOps.grayscale(pillow_img)
-        img = np.asarray(gray)
-        plt.grid(False)
-        plt.axis("off")
-        plt.imshow(img, cmap="gray")
-        plt.show()
+        render_html.render_in_browser(
+            html_contents, str(pathlib.Path.cwd() / "preview.html")
+        )

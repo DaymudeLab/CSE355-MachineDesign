@@ -1,10 +1,10 @@
 from collections import defaultdict
 from typing import Any, DefaultDict, Dict, Set, Tuple, Union
-from asu_theory_of_cs.automata.base import _Automata
+from cse355_machine_design.automata.base import _Automata
 from itertools import product
-from asu_theory_of_cs.errors import DetailedError
-from asu_theory_of_cs import registry
-from asu_theory_of_cs.util import quote_str, set_str
+from cse355_machine_design.errors import DetailedError
+from cse355_machine_design import registry
+from cse355_machine_design.util import quote_str, set_str
 
 
 class _NFA(_Automata):
@@ -88,7 +88,12 @@ class _NFA(_Automata):
     def evaluate_one_step_no_closure(
         self, input_char, current_states: Set[str], enable_trace=0
     ) -> Set[str]:
-        if enable_trace == 2:
+        if not (input_char in self._input_symbols):
+            raise DetailedError(
+                "Encountered input character not in alphabet",
+                f'The charachter "{input_char}" is not found in the alphabet {set_str(self._input_symbols)}',
+            )
+        if enable_trace >= 2:
             print(
                 f"Now calculating new states after reading input {quote_str(input_char)}..."
             )
@@ -99,24 +104,24 @@ class _NFA(_Automata):
             input_char_new_states = (
                 self._transition_table.get((state, input_char)) or set()
             )
-            if enable_trace == 2:
+            if enable_trace >= 2:
                 print(
                     f"      By reading {quote_str(input_char)} from state {quote_str(state)}, we can transition to the following states: {set_str(input_char_new_states)}, so we add them to our mark set"
                 )
             new_states.update(input_char_new_states)
-        if enable_trace == 2:
+        if enable_trace >= 2:
             print(f"    Mark Set: {set_str(new_states)}")
             print(
                 f"After considering all transitions from states in {set_str(current_states)} involving {quote_str(input_char)}, the states we are in are {set_str(new_states)}"
             )
-        elif enable_trace == 1:
+        elif enable_trace >= 1:
             print(
                 f"Reading input {quote_str(input_char)}:\n    Current possible states: {set_str(new_states)}"
             )
         return new_states
 
     def epsilon_closure(self, current_states: Set[str], enable_trace=0) -> Set[str]:
-        if enable_trace == 2:
+        if enable_trace >= 2:
             print(
                 "Now calculating epsilon closure of the above. We start by marking the above states"
             )
@@ -127,10 +132,10 @@ class _NFA(_Automata):
             previous_closure = closure
             closure_comp = closure.copy()
             closure_iter = closure.copy()
-            if enable_trace == 2 and first:
+            if enable_trace >= 2 and first:
                 print(f"    Marked states: {set_str(previous_closure)}")
                 first = False
-            elif enable_trace == 2:
+            elif enable_trace >= 2:
                 print(
                     "    We just marked some new states, so we must perform the closure again"
                 )
@@ -138,7 +143,7 @@ class _NFA(_Automata):
                 epsilon_closure = (
                     self._transition_table.get((state, self._epsilon)) or set()
                 )
-                if enable_trace == 2:
+                if enable_trace >= 2:
                     if len(epsilon_closure) == 0:
                         print(
                             f"      There are no epsilon transitions from {quote_str(state)}, so we dont add anything to our mark set"
@@ -149,19 +154,19 @@ class _NFA(_Automata):
                         )
                 closure_comp.update(epsilon_closure)
             closure = closure_comp
-            if enable_trace == 2 and (not first):
+            if enable_trace >= 2 and (not first):
                 print(f"    Marked states: {set_str(closure)}")
 
-        if enable_trace == 2 and first:
+        if enable_trace >= 2 and first:
             print(
                 "We were in no states (empty set), so the closure is also the empty set"
             )
-        elif enable_trace == 2:
+        elif enable_trace >= 2:
             print(
                 "Our previous two marked state sets are equal, so we know we are done with calculating the closure"
             )
             print(f"The states we are now in are: {set_str(closure)}")
-        elif enable_trace == 1:
+        elif enable_trace >= 1:
             print(f"    After epsilon closure: {set_str(closure)}")
         return closure
 
@@ -172,14 +177,14 @@ class _NFA(_Automata):
         current_states: Set[str] = self.epsilon_closure(
             set([self._start_state]), enable_trace
         )
-        if enable_trace == 2:
+        if enable_trace >= 2:
             print()
         for input_char in input_str:
             one_step = self.evaluate_one_step_no_closure(
                 input_char, current_states, enable_trace
             )
             current_states = self.epsilon_closure(one_step, enable_trace)
-            if enable_trace == 2:
+            if enable_trace >= 2:
                 print()
 
         is_final = False
@@ -194,7 +199,7 @@ class _NFA(_Automata):
                     )
                 is_final = True
                 break
-            elif enable_trace == 2:
+            elif enable_trace >= 2:
                 print(f"{quote_str(state)} IS NOT a final state")
 
         if (not is_final) and enable_trace > 0:
