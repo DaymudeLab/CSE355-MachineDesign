@@ -37,6 +37,13 @@ class _NFA(_Automata):
                 "You have declared your alphabet to include the symbol epsilon. This is not allowed. Either remove epsilon from the string or redefine the epsilon character by passing it as a kwarg to the NFA constructor",
             )
 
+        for state in self._states:
+            if not isinstance(state, str):
+                raise DetailedError(
+                    "States are not strings",
+                    "Please define you states as strings. At this time the library does not support tuple or any other form of state. So if you have ('q1','q2'), you may rewrite it as '(q1,q2)'.",
+                )
+
         transitions_valid = True
         seen_transition: set[Tuple[str, str]] = set()
         err_str = ""

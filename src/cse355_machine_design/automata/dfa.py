@@ -20,6 +20,13 @@ class _DFA(_NFA):
         super().__init__(Q, Sigma, _delta, q0, F)
 
     def verify_legality(self) -> None:
+        for state in self._states:
+            if not isinstance(state, str):
+                raise DetailedError(
+                    "States are not strings",
+                    "Please define you states as strings. At this time the library does not support tuple or any other form of state. So if you have ('q1','q2'), you may rewrite it as '(q1,q2)'.",
+                )
+
         transitions_valid = True
         seen_transition: set[Tuple[str, str]] = set()
         err_str = ""
