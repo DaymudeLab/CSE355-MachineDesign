@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cse355-machine-design"
-version = "0.1.3"
+version = "0.1.4"
 authors = [{ name = "Saajan Maslanka", email = "academia@saajanm.com" }]
 description = "A python library to allow students to complete machine design problems in ASU's CSE 355 Online offering"
 readme = "README.md"

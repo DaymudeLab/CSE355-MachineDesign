@@ -84,6 +84,7 @@ class _Automata(ABC):
         raise NotImplementedError("Abstract method not callable")
 
     def display_state_diagram(self) -> None:
+        print("Opening state diagram in default browser...")
         html_contents = (
             '<!doctypehtml><title>Automata Visualization</title><meta content="View your automata in the browser"name=description><script src=https://cdn.jsdelivr.net/npm/@viz-js/viz@3.2.4/lib/viz-standalone.min.js></script><script>Viz.instance().then(function(e){var n=e.renderSVGElement(\''
             + self._generate_dot_string()

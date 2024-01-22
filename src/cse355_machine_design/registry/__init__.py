@@ -34,14 +34,19 @@ def get_nfa(question_number: int) -> Union[automata.NFA, None]:
 
 
 def export_submissions() -> None:
+    print("Exporting submissions to `submissions.json`.")
     mod_registry = {}
     for outer_k, outer_v in _registry.items():
         mod_registry[outer_k] = {}
         for inner_k, inner_v in outer_v.items():  # type: ignore
             mod_registry[outer_k][inner_k] = inner_v.export_to_dict()
+            print(f"\tExporting {outer_k.upper()} for Question {str(inner_k)}")
     out_str = json.dumps(mod_registry)
     with open("submissions.json", "w") as out:
         out.write(out_str)
+    print(
+        "If you intent to submit to Gradescope, please upload the JSON file without renaming."
+    )
 
 
 def import_submissions(path: str = "submissions.json") -> None:
