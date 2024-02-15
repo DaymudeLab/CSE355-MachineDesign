@@ -11,12 +11,13 @@ if TYPE_CHECKING:
     class _Registry(TypedDict):
         dfa: Dict[int, automata.DFA]
         nfa: Dict[int, automata.NFA]
+        pda: Dict[int, automata.PDA]
 
 else:
     from .. import automata
 
 
-_registry: _Registry = {"dfa": {}, "nfa": {}}
+_registry: _Registry = {"dfa": {}, "nfa": {}, "pda": {}}
 
 
 def add_to_registry(
@@ -31,6 +32,10 @@ def get_dfa(question_number: int) -> Union[automata.DFA, None]:
 
 def get_nfa(question_number: int) -> Union[automata.NFA, None]:
     return _registry["nfa"].get(question_number)
+
+
+def get_pda(question_number: int) -> Union[automata.PDA, None]:
+    return _registry["pda"].get(question_number)
 
 
 def export_submissions() -> None:
