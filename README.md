@@ -92,6 +92,46 @@ Additionally, we can see the use of the character `_` in the transition function
 >
 > Do note that this feature should be used as little as possible as it causes the library to perform additional runtime checks and may cause errors in existing codebases.
 
+#### PDAs
+
+PDAs or Push Down Automata are similar to NFA but with the added ability to use a depth-unlimited stack data structure for memory. 
+
+Heres how you can define one in code:
+```python
+from cse355_machine_design import PDA
+
+Q = {"q1", "q2", "q3", "q4"}
+Sigma = {"0", "1"}
+Gamma = {"0", "$"}
+q0 = "q1"
+F = {"q1", "q4"}
+delta = {
+    ("q1", "_", "_"): {("q2", "$")},
+    ("q2", "0", "_"): {("q2", "0")},
+    ("q2", "1", "0"): {("q3", "_")},
+    ("q3", "1", "0"): {("q3", "_")},
+    ("q3", "_", "$"): {("q4", "_")},
+}
+
+M = PDA(Q, Sigma, Gamma, delta, q0, F)
+```
+
+Unlike NFAs and DFAs, PDAs are a 6-tuple. The new addition is the stack alphabet `Gamma`.
+This is a set of characters that represent what can be stored in the stack.
+
+Delta is similarly changed to incorporate the appearance of the stack.
+
+In code we define delta as a dictionary, where the entries are of the form:
+`(Q,A,B): {(R,C), ...}` where:
++ Q is the state you are traveling from
++ A is the input symbol you are reading (optionally epsilon)
++ B is the stack symbol you are popping from the top of the stack (optionally epsilon)
++ R is the state you are going to
++ C is the stack symbol you are pushing onto the top of the stack (optionally epsilon)
+
+The notation `{(R,C), ...}` represents that we can repeat multiple `(R,C)` pairs in a set format
+
+
 ### Machine Simulation
 
 An additional feature of this library is to perform simulation of a machine on a given input string.
@@ -112,6 +152,12 @@ This evaluates the machine `M` on the input string `10100`.
 If there is a mismatch between the charaters in the string and the alphabet of the machine, the library will throw an error.
 
 The method returns a `bool` representing if the machine accepted or rejected the string.
+
+> [!WARNING]
+> When evaluating PDAs a memory and time overhead is incurred with respect to the length of the input string.
+> When testing many strings keep the average string length low as it can slow down performance by a lot.
+> When testing a single string, attempting to evaluate strings greater than length 500 may take dozens of seconds on slower systems.
+> The time complexity is not great either, so further increases will result in even higher slowdowns.
 
 #### Tracing Simulation
 
