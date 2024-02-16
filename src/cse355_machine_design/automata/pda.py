@@ -283,9 +283,9 @@ class CFG:
         ]
 
         index_map: dict[str, int] = dict()
-
+        rule_iter = self.rules.items()
         seen_start = False
-        for i, (variable, _) in enumerate(self.rules.items()):
+        for i, (variable, _) in enumerate(rule_iter):
             if variable == self.start_variable:
                 seen_start = True
                 index_map[variable] = 0
@@ -293,7 +293,7 @@ class CFG:
                 index_map[variable] = i if seen_start else i + 1
 
         for i in range(n):
-            for v, rule_set in self.rules.items():
+            for v, rule_set in rule_iter:
                 for rule in rule_set:
                     if (
                         len(rule) == 1
@@ -302,13 +302,22 @@ class CFG:
                     ):
                         bool_array[0][i][index_map[v]] = True
 
+        two_rule = dict()
+        for v, rule_set in rule_iter:
+            new_rules = set()
+            for rule in rule_set:
+                if len(rule) != 2:
+                    continue
+                new_rules.add(rule)
+            two_rule[v] = new_rules
+
+        two_rule_iter = two_rule.items()
+
         for l in range(2, n + 1):
             for s in range(n - l + 1):
                 for p in range(1, l):
-                    for v, rule_set in self.rules.items():
+                    for v, rule_set in two_rule_iter:
                         for rule in rule_set:
-                            if len(rule) != 2:
-                                continue
                             b = index_map[rule[0]]
                             c = index_map[rule[1]]
                             if (
@@ -568,6 +577,10 @@ class _PDA(_Automata):
         epsilon_char="_",
         generate_cfg=True,
     ) -> None:
+        """
+        Delta entries should be of the form (FROM_STATE, READ_INPUT, POP): {(TO_STATE, PUSH),...}
+
+        """
         self._states = Q
         self._input_symbols = Sigma
         self._stack_alphabet = Gamma
