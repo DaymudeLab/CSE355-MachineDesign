@@ -81,3 +81,21 @@ def import_submissions(path: str = "submissions.json") -> None:
             delta[(transition["from"], transition["input"])] = set(transition["to"])
         nfa = automata.NFA(Q, Sigma, delta, q0, F, nfa_desc["epsilon_char"])
         add_to_registry(nfa_desc["type"], int(submission_num), nfa)
+
+    pdas: Dict[str, Dict] = mod_registry["pda"]
+    for submission_num, pda_desc in pdas.items():
+        Q = set(pda_desc["states"])
+        Sigma = set(pda_desc["input_symbols"])
+        Gamma = set(pda_desc["stack_alphabet"])
+        q0 = pda_desc["start_state"]
+        F = set(pda_desc["finals"])
+        delta = {}
+        for transition in pda_desc["delta"]:
+            to_push_set = set(map(tuple, transition["to_push"]))
+            delta[
+                (transition["from"], transition["input"], transition["pop"])
+            ] = to_push_set
+        pda = automata.PDA(
+            Q, Sigma, Gamma, delta, q0, F, epsilon_char=pda_desc["epsilon_char"]
+        )
+        add_to_registry(pda_desc["type"], int(submission_num), pda)

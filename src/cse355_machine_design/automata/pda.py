@@ -766,10 +766,9 @@ class _PDA(_Automata):
                 map(
                     lambda p: {
                         "from": p[0][0],
-                        "to": list(p[1])[0],
                         "input": p[0][1],
                         "pop": p[0][2],
-                        "push": list(p[1])[1],
+                        "to_push": list(p[1]),
                     },
                     self._transition_table.items(),
                 )
