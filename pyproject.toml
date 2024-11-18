@@ -1,20 +1,30 @@
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
-[project]
+[tool.poetry]
 name = "cse355-machine-design"
 version = "0.2.1"
-authors = [{ name = "Saajan Maslanka", email = "academia@saajanm.com" }]
-description = "A python library to allow students to complete machine design problems in ASU's CSE 355 Online offering"
-readme = "README.md"
-requires-python = ">=3.10"
-classifiers = [
-  "Programming Language :: Python :: 3",
-  "Operating System :: OS Independent",
+description = "Automata and Turing machine library for ASU's CSE 355."
+authors = [
+    "Saajan Maslanka <academia@saajanm.com>",
+    "Josh Daymude <jdaymude@asu.edu>"
 ]
-dependencies = ["render-html"]
+license = "GPL-3.0-only"
+readme = "README.md"
+repository = "https://github.com/DaymudeLab/CSE355-MachineDesign"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent"
+]
 
-[project.urls]
-"Homepage" = "https://github.com/DaymudeLab/CSE355-MachineDesign"
+[tool.poetry.dependencies]
+python = "^3.10"
+numpy = "^2.1.3"
+pandas = "^2.2.3"
+matplotlib = "^3.9.2"
+render-html = "^1.0.1"
+
+[tool.poetry.urls]
 "Bug Tracker" = "https://github.com/DaymudeLab/CSE355-MachineDesign/issues"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
