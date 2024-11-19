@@ -166,9 +166,9 @@ class _BusyBeaverTM():
                 else:
                     break
 
-            # Just before closing the configuration history file, write the
-            # length of the tape. This will be useful for later reconstruction.
-            writer.writerow([len(tape), 0, 0, 0])
+            # Before closing the configuration history file, write the total
+            # steps run and the tape length. This will be useful later.
+            writer.writerow([step, len(tape), 0, 0])
 
         print(f"TM {self.id} ran for {step} steps and halted.")
         print(f"Wrote history of tape changes to {config_fname}.")
@@ -181,7 +181,7 @@ class _BusyBeaverTM():
         print(f"Added this result to {tmdb_fname}.")
 
     def plot_spacetime(self, compress=True, limit=None, title=True,
-                       colors=['maroon', 'gold']):
+                       colors=['#8C1D40', '#FFC627']):
         """
         Plots this BusyBeaverTM's space-time diagram.
 
@@ -204,12 +204,13 @@ class _BusyBeaverTM():
         config_fname = osp.join(self.configs_dir, f"{self.id}.csv")
         try:
             changes = np.genfromtxt(config_fname, dtype=int, delimiter=',')
-            tape_len = int(changes[-1, 0])
+            steps_run, tape_len = int(changes[-1, 0]), int(changes[-1, 1])
             changes = changes[:-1]
         except FileNotFoundError:
             print((f"ERROR: You are trying to plot TM {self.id} but its "
                    f"configuration history {config_fname} does not exist. "
                    f"Run this TM with the .run() function before plotting."))
+            return
 
         # Align all changes to the final length tape.
         for i in range(len(changes) - 2, -1, -1):
@@ -218,7 +219,7 @@ class _BusyBeaverTM():
                 changes[:i+1, 1:3] += extlen
 
         # Create the (possibly compressed) configuration history.
-        rows_needed = len(changes) + 1 if compress else changes[-1, 0] + 1
+        rows_needed = len(changes) + 1 if compress else steps_run + 1
         limit = rows_needed if limit is None else min(limit, rows_needed)
         try:
             configs = np.zeros((limit, tape_len), dtype=np.uint8)
@@ -232,11 +233,9 @@ class _BusyBeaverTM():
         for step, start, head, symb in changes:
             # When not compressing, copy tape until change.
             if not compress:
-                while row < step:
+                while row < step and row < limit:
                     configs[row] = configs[row-1]
                     row += 1
-                    if row >= limit:
-                        break
                 if row >= limit:
                     break
 
@@ -246,6 +245,9 @@ class _BusyBeaverTM():
             row += 1
             if row >= limit:
                 break
+        while row < limit:
+            configs[row] = configs[row-1]
+            row += 1
 
         # Trim the configuration history of extra 0-space on the outsides.
         col_sums = configs.sum(axis=0)
@@ -261,11 +263,11 @@ class _BusyBeaverTM():
         configs = configs[:, left:right]
 
         # Plot the space-time diagram.
-        fig, ax = plt.subplots(figsize=(4, 6), dpi=300)
+        fig, ax = plt.subplots(figsize=(2, 6), dpi=300)
         cmap = mpl.colors.ListedColormap(colors)
-        ax.imshow(configs, cmap=cmap)
+        ax.imshow(configs, cmap=cmap, aspect='auto')
         ax.set_axis_off()
         if title:
             ax.set_title(self.id)
         fig.savefig(osp.join(self.plots_dir, f"{self.id}.png"),
-                    bbox_inches='tight')
+                    bbox_inches='tight', pad_inches=0)
