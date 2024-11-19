@@ -1,12 +1,14 @@
-from cse355_machine_design.util import dump_df, load_df
-
+import csv
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
+import os
 import os.path as osp
 import pandas as pd
 
 
 class _BusyBeaverTM():
-    def __init__(self, tmstr, results_dir='results', plots_dir='plots'):
+    def __init__(self, tmstr, configs_dir='configs', plots_dir='plots'):
         """
         Construct a BusyBeaverTM from its string representation. A busy beaver
         TM is a deterministic TM with a doubly-infinite tape initialized with
@@ -23,7 +25,7 @@ class _BusyBeaverTM():
         rows by underscores.
 
         :param tmstr: a string representation of the TM to construct
-        :param db_dir: a string directory for the TM database and histories
+        :param configs_dir: a string directory for configuration histories
         :param plots_dir: a string directory for space-time diagrams
         """
         # Parse and validate transition table.
@@ -59,7 +61,9 @@ class _BusyBeaverTM():
         # Store member data.
         self.Q, self.Gamma, self.delta = Q, Gamma, delta
         self.id = self.to_str()
-        self.results_dir, self.plots_dir = results_dir, plots_dir
+        self.configs_dir, self.plots_dir = configs_dir, plots_dir
+        os.makedirs(self.configs_dir, exist_ok=True)
+        os.makedirs(self.plots_dir, exist_ok=True)
 
     def to_str(self):
         """
@@ -101,9 +105,9 @@ class _BusyBeaverTM():
         each time its boundaries are exceeded (default = 10)
         """
         # Load TM database from file, or create it if it does not exist.
-        tmdb_fname = osp.join(self.results_dir, 'database.csv')
+        tmdb_fname = 'database.csv'
         try:
-            tmdb = load_df(tmdb_fname, index_col='ID')
+            tmdb = pd.read_csv(tmdb_fname, sep=',', index_col='ID')
         except FileNotFoundError:
             tmdb = pd.DataFrame(columns=['ID', 'Steps'])
             tmdb = tmdb.set_index('ID')
@@ -118,45 +122,150 @@ class _BusyBeaverTM():
         # Initialize the tape as all zeroes and the tape head in the "middle".
         # Because this tape needs to be extended when boundaries are exceeded,
         # also track the index of the starting cell as it changes.
+        state, step = 0, 0
         tape = [0 for i in range(extlen)]
         head = len(tape) // 2
         start = head
 
-        # Run until halting.
-        print(f"Running TM {self.id} on the all-0 tape...")
-        state, step = 0, 0
-        while True:
-            print(f"Steps Run: {step}", end='\r')
+        # Set up configuration history file for this TM.
+        config_fname = osp.join(self.configs_dir, f"{self.id}.csv")
+        with open(config_fname, 'w') as f:
+            writer = csv.writer(f)
 
-            # Get the transition information.
-            write, shift, nextstate = self.delta[state, tape[head]]
-            write, shift, nextstate = int(write), int(shift), int(nextstate)
+            # Run until halting.
+            print(f"Running TM {self.id} on the all-0 tape...")
+            while True:
+                print(f"Steps Run: {step}", end='\r')
 
-            # Halt if this is an unused transition.
-            if write == -2 or shift == -2:
-                break
+                # Get the transition information.
+                symb, shift, tostate = self.delta[state, tape[head]]
+                symb, shift, tostate = int(symb), int(shift), int(tostate)
 
-            # Extend the tape (to the left or right) if needed.
-            if head == 0 and shift == -1:
-                tape = [0 for i in range(extlen)] + tape
-                head += extlen
-                start += extlen
-            elif head == len(tape) - 1 and shift == 1:
-                tape = tape + [0 for i in range(extlen)]
+                # Halt if this is an unused transition.
+                if symb == -2 or shift == -2:
+                    break
 
-            # Process the transition, halting if there is no next state.
-            step += 1
-            tape[head] = write
-            head += shift
-            if nextstate != -2:
-                state = nextstate
-            else:
-                break
+                # Extend the tape (to the left or right) if needed.
+                if head == 0 and shift == -1:
+                    tape = [0 for i in range(extlen)] + tape
+                    head += extlen
+                    start += extlen
+                elif head == len(tape) - 1 and shift == 1:
+                    tape = tape + [0 for i in range(extlen)]
+
+                # Process the transition and log any tape changes.
+                step += 1
+                if tape[head] != symb:
+                    tape[head] = symb
+                    writer.writerow([step, start, head, symb])
+                head += shift
+
+                # Make the state transition, or halt if there is no next state.
+                if tostate != -2:
+                    state = tostate
+                else:
+                    break
+
+            # Just before closing the configuration history file, write the
+            # length of the tape. This will be useful for later reconstruction.
+            writer.writerow([len(tape), 0, 0, 0])
 
         print(f"TM {self.id} ran for {step} steps and halted.")
+        print(f"Wrote history of tape changes to {config_fname}.")
 
         # Write this result to the local database.
         new_row = pd.DataFrame([(self.id, step)], columns=['ID', 'Steps'])
         tmdb = pd.concat([tmdb, new_row.set_index('ID')])
-        dump_df(tmdb_fname, tmdb)
+        tmdb.sort_values(by=['Steps'], ascending=False, inplace=True)
+        tmdb.to_csv(tmdb_fname, sep=',', index=True)
         print(f"Added this result to {tmdb_fname}.")
+
+    def plot_spacetime(self, compress=True, limit=None, title=True,
+                       colors=['maroon', 'gold']):
+        """
+        Plots this BusyBeaverTM's space-time diagram.
+
+        :param compress: True if the diagram should only show steps when the
+        tape was updated; False if all steps' tapes should be shown
+        :param limit: an int maximum number of rows to display, regardless of
+        compression mode; None if no limit
+        :param title: True iff the TM string representation should be shown
+        :param colors: a list of colors recognized by matplotlib, where the ith
+        color will be used to represent tape cells marked with symbol i
+        """
+        # Check that there are enough colors for this TM.
+        assert len(colors) >= len(self.Gamma), ("ERROR: This TM has ",
+                                                f"{len(self.Gamma)} symbols "
+                                                f"but only {len(colors)} "
+                                                "colors were provided.")
+
+        # Attempt to load this TM's configuration history; if it is missing,
+        # error out and ask the user to use BusyBeaverTM.run() first.
+        config_fname = osp.join(self.configs_dir, f"{self.id}.csv")
+        try:
+            changes = np.genfromtxt(config_fname, dtype=int, delimiter=',')
+            tape_len = int(changes[-1, 0])
+            changes = changes[:-1]
+        except FileNotFoundError:
+            print((f"ERROR: You are trying to plot TM {self.id} but its "
+                   f"configuration history {config_fname} does not exist. "
+                   f"Run this TM with the .run() function before plotting."))
+
+        # Align all changes to the final length tape.
+        for i in range(len(changes) - 2, -1, -1):
+            if changes[i, 1] < changes[i+1, 1]:  # Tape was left-extended.
+                extlen = changes[i+1, 1] - changes[i, 1]
+                changes[:i+1, 1:3] += extlen
+
+        # Create the (possibly compressed) configuration history.
+        rows_needed = len(changes) + 1 if compress else changes[-1, 0] + 1
+        limit = rows_needed if limit is None else min(limit, rows_needed)
+        try:
+            configs = np.zeros((limit, tape_len), dtype=np.uint8)
+        except np._core._exceptions._ArrayMemoryError:
+            print(("ERROR: Ran out of memory trying to reconstruct this TM's "
+                   "configuration history. Try running .plot_spacetime() with "
+                   "compress=True, or limit the visualization to a smaller "
+                   "number of rows with limit=<max rows>."))
+            return
+        row = 1
+        for step, start, head, symb in changes:
+            # When not compressing, copy tape until change.
+            if not compress:
+                while row < step:
+                    configs[row] = configs[row-1]
+                    row += 1
+                    if row >= limit:
+                        break
+                if row >= limit:
+                    break
+
+            # Now, regardless of compression, visualize the next change.
+            configs[row] = configs[row-1]
+            configs[row][head] = symb
+            row += 1
+            if row >= limit:
+                break
+
+        # Trim the configuration history of extra 0-space on the outsides.
+        col_sums = configs.sum(axis=0)
+        left, right = 0, len(col_sums)
+        for i, col_sum in enumerate(col_sums):
+            if col_sum != 0:
+                left = i
+                break
+        for j, col_sum in enumerate(col_sums[::-1]):
+            if col_sum != 0:
+                right = len(col_sums) - j
+                break
+        configs = configs[:, left:right]
+
+        # Plot the space-time diagram.
+        fig, ax = plt.subplots(figsize=(4, 6), dpi=300)
+        cmap = mpl.colors.ListedColormap(colors)
+        ax.imshow(configs, cmap=cmap)
+        ax.set_axis_off()
+        if title:
+            ax.set_title(self.id)
+        fig.savefig(osp.join(self.plots_dir, f"{self.id}.png"),
+                    bbox_inches='tight')
