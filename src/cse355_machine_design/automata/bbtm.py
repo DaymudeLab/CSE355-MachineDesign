@@ -93,14 +93,14 @@ class _BusyBeaverTM():
 
         return "".join(chars[:-1])
 
-    def run(self, extlen=10):
+    def run(self, max_steps=None, extlen=10):
         """
         Runs the BusyBeaverTM from the tape of all 0's. If the TM halts, then
         the number of steps it ran for is printed out and recorded in a local
         database (to avoid recomputation if this one is ever run again).
 
-        WARNING: This function may run forever if the TM is non-halting.
-
+        :param max_steps: an int maximum steps to run for, or None to run until
+        halting. WARNING: a non-halting TM will run forever if steps=None
         :param extlen: optionally, an int number of cells to extend the tape by
         each time its boundaries are exceeded (default = 10)
         """
@@ -126,15 +126,16 @@ class _BusyBeaverTM():
         tape = [0 for i in range(extlen)]
         head = len(tape) // 2
         start = head
+        halted = False
 
         # Set up configuration history file for this TM.
         config_fname = osp.join(self.configs_dir, f"{self.id}.csv")
         with open(config_fname, 'w') as f:
             writer = csv.writer(f)
 
-            # Run until halting.
+            # Run until max_steps is reached or this TM halts.
             print(f"Running TM {self.id} on the all-0 tape...")
-            while True:
+            while max_steps is None or step < max_steps:
                 print(f"Steps Run: {step}", end='\r')
 
                 # Get the transition information.
@@ -164,41 +165,38 @@ class _BusyBeaverTM():
                 if tostate != -2:
                     state = tostate
                 else:
+                    halted = True
                     break
 
             # Before closing the configuration history file, write the total
             # steps run and the tape length. This will be useful later.
             writer.writerow([step, len(tape), 0, 0])
 
-        print(f"TM {self.id} ran for {step} steps and halted.")
+        if halted:
+            print(f"TM {self.id} ran for {step} steps and halted.")
+        else:
+            print(f"TM {self.id} ran for {step} steps but didn't halt (yet).")
         print(f"Wrote history of tape changes to {config_fname}.")
 
-        # Write this result to the local database.
-        new_row = pd.DataFrame([(self.id, step)], columns=['ID', 'Steps'])
-        tmdb = pd.concat([tmdb, new_row.set_index('ID')])
-        tmdb.sort_values(by=['Steps'], ascending=False, inplace=True)
-        tmdb.to_csv(tmdb_fname, sep=',', index=True)
-        print(f"Added this result to {tmdb_fname}.")
+        # Write this result to the local database if halted.
+        if halted:
+            new_row = pd.DataFrame([(self.id, step)], columns=['ID', 'Steps'])
+            tmdb = pd.concat([tmdb, new_row.set_index('ID')])
+            tmdb.sort_values(by=['Steps'], ascending=False, inplace=True)
+            tmdb.to_csv(tmdb_fname, sep=',', index=True)
+            print(f"Added this result to {tmdb_fname}.")
 
-    def plot_spacetime(self, compress=True, limit=None, title=True,
-                       colors=['#8C1D40', '#FFC627']):
+    def reconstruct_configs(self, compress=True, limit=None):
         """
-        Plots this BusyBeaverTM's space-time diagram.
+        Reconstruct this BusyBeaverTM's entire tape contents over time from the
+        tape change events recorded in its configuration history file.
 
         :param compress: True if the diagram should only show steps when the
         tape was updated; False if all steps' tapes should be shown
         :param limit: an int maximum number of rows to display, regardless of
         compression mode; None if no limit
-        :param title: True iff the TM string representation should be shown
-        :param colors: a list of colors recognized by matplotlib, where the ith
-        color will be used to represent tape cells marked with symbol i
+        :returns: a numpy array of tape contents over time
         """
-        # Check that there are enough colors for this TM.
-        assert len(colors) >= len(self.Gamma), ("ERROR: This TM has ",
-                                                f"{len(self.Gamma)} symbols "
-                                                f"but only {len(colors)} "
-                                                "colors were provided.")
-
         # Attempt to load this TM's configuration history; if it is missing,
         # error out and ask the user to use BusyBeaverTM.run() first.
         config_fname = osp.join(self.configs_dir, f"{self.id}.csv")
@@ -249,6 +247,31 @@ class _BusyBeaverTM():
             configs[row] = configs[row-1]
             row += 1
 
+        return configs
+
+    def plot_spacetime(self, compress=True, limit=None, title=False,
+                       figsize=(2, 6), colors=['#8C1D40', '#FFC627']):
+        """
+        Plots this BusyBeaverTM's space-time diagram.
+
+        :param compress: True if the diagram should only show steps when the
+        tape was updated; False if all steps' tapes should be shown
+        :param limit: an int maximum number of rows to display, regardless of
+        compression mode; None if no limit
+        :param title: True iff the TM string representation should be shown
+        :param figsize: a pair of dimensions as in matplotlib.Figure
+        :param colors: a list of colors recognized by matplotlib, where the ith
+        color will be used to represent tape cells marked with symbol i
+        """
+        # Check that there are enough colors for this TM.
+        assert len(colors) >= len(self.Gamma), ("ERROR: This TM has ",
+                                                f"{len(self.Gamma)} symbols "
+                                                f"but only {len(colors)} "
+                                                "colors were provided.")
+
+        # Reconstruct the tape contents over time.
+        configs = self.reconstruct_configs(compress, limit)
+
         # Trim the configuration history of extra 0-space on the outsides.
         col_sums = configs.sum(axis=0)
         left, right = 0, len(col_sums)
@@ -263,7 +286,7 @@ class _BusyBeaverTM():
         configs = configs[:, left:right]
 
         # Plot the space-time diagram.
-        fig, ax = plt.subplots(figsize=(2, 6), dpi=300)
+        fig, ax = plt.subplots(figsize=figsize, dpi=300)
         cmap = mpl.colors.ListedColormap(colors)
         ax.imshow(configs, cmap=cmap, aspect='auto')
         ax.set_axis_off()
