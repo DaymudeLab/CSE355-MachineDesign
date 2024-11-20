@@ -1,13 +1,11 @@
 # CSE 355 Machine Design
-A python library to allow students to complete machine design problems in ASU's CSE 355 Online offering
 
-> [!IMPORTANT]
-> Currently only DFAs and NFAs are supported. PDAs and Turing Machines are in the works for the next few releases.
+A Python library for defining, simulating, visualizing, and interacting with automata and Turing machines in Arizona State University's CSE 355: Introduction to Theoretical Computer Science courses.
 
 ## Installation
 
 > [!IMPORTANT]
->  **Requires: Python 3.10+ to use**
+> **Requires Python 3.10 or later**.
 
 This library can be installed via the command:
 ```bash
@@ -15,6 +13,11 @@ pip install cse355-machine-design
 ```
 
 ## Usage
+
+> [!NOTE]
+> This documentation covers DFAs, NFAs, and PDAs but is missing the busy beaver Turing machines introduced in release v0.3.0.
+> ASU students should refer to the examples given in the assignment instruction documents for details.
+
 This library has four main usage aspects: machine defintion, machine simulation, machine visualization, and machine submission.
 ### Machine Definition
 Machine definition involves defining a machine with a formal mathematical definition. This library borrows its syntax heavily from Michael Sipser's 
