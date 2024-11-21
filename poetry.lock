@@ -640,14 +640,14 @@ files = [
 ]
 
 [[package]]
-name = "render-html"
-version = "1.0.1"
+name = "render-html-v2"
+version = "1.0.0"
 description = "Python library that provides a simple way to render HTML content in a web browser."
 optional = false
 python-versions = ">=3.10"
 files = [
-    {file = "render_html-1.0.1-py3-none-any.whl", hash = "sha256:c7fc7275931964414a94edc158955c61643fe981eca7e2c65f9311331be77986"},
-    {file = "render_html-1.0.1.tar.gz", hash = "sha256:ae7119b53566f84dc172480a1d8a3cc1fd8d5d3661f2a8537efb24114e97f17f"},
+    {file = "render_html_v2-1.0.0-py3-none-any.whl", hash = "sha256:e060703d590dbad94f6bfa3850bcde0ad8b7ec355a127f0da2deec03f18afd5c"},
+    {file = "render_html_v2-1.0.0.tar.gz", hash = "sha256:f6feb67c79f6b30208ebee4b14c031eae1ceb0327bfcc45f45c1cd2c4b3e5489"},
 ]
 
 [[package]]
@@ -675,4 +675,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "8181727bb2abb65bf4218231547bf9bdc5a82a6089d6774d4e10ac3e7c0de4ad"
+content-hash = "f305d6e4ccd673c7ea14501cdc97a1af88db886b5fb209c9550f88dec9d11331"

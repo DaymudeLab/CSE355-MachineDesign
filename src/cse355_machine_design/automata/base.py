@@ -91,5 +91,5 @@ class _Automata(ABC):
             + '\');document.getElementById("graph").appendChild(n)})</script><div id=graph></div>'
         )
         render_html.render_in_browser(
-            html_contents, str(pathlib.Path.cwd() / "preview.html")
+            html_contents, str(pathlib.Path.cwd() / "preview.html"), encoding='utf-8'
         )
