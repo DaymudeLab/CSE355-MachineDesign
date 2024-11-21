@@ -2,20 +2,13 @@ from src.cse355_machine_design import PDA, registry
 
 
 
-def problem5():
-    """
-    L_5 = {w#x | w, x in {0, 1}* and w^R is a substring of x}
-    """
+def testPda():
 
-    Q = {'q0', 'q1', 'q2'}
+    Q = {'q0', 'q1'}
     Sigma = {'0', '1', '#'}
     Gamma = {'0', '1', '$'}
     delta = {
-        ('q0', '_', '_'): {('q1', '$')},
-        ('q1', '0', '_'): {('q1', '0')},
-        ('q1', '1', '_'): {('q1', '1')},
-        ('q1', '#', '_'): {('q2', '_')},
-            
+        ('q0', '0', '0'): {('q1', '0')},
     }
     q0 = "q0"
     F = {}
@@ -26,7 +19,7 @@ def problem5():
 
 if __name__ == "__main__":
     #problem1().submit_as_answer(1)
-    problem5().display_state_diagram()
+    testPda().display_state_diagram()
 
     #problem2().submit_as_answer(2)
     #problem3().submit_as_answer(3)
