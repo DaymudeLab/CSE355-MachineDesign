@@ -1,239 +1,100 @@
-# CSE 355 Machine Design
+# cse355-machine-design
 
-A Python library for defining, simulating, visualizing, and interacting with automata and Turing machines in Arizona State University's CSE 355: Introduction to Theoretical Computer Science courses.
-
-## Installation
-
-> [!IMPORTANT]
-> **Requires Python 3.10 or later**.
-
-This library can be installed via the command:
-```bash
-pip install cse355-machine-design
-```
-
-## Usage
-
-> [!NOTE]
-> This documentation covers DFAs, NFAs, and PDAs but is missing the busy beaver Turing machines introduced in release v0.3.0.
-> ASU students should refer to the examples given in the assignment instruction documents for details.
-
-This library has four main usage aspects: machine defintion, machine simulation, machine visualization, and machine submission.
-### Machine Definition
-Machine definition involves defining a machine with a formal mathematical definition. This library borrows its syntax heavily from Michael Sipser's 
-*Introduction to the Theory of Computation* [^1].
-
-[^1]: https://math.mit.edu/~sipser/book.html
-
-See below for example defintions for various machine types
-
-#### DFAs
-
-In order to define a deterministic finite automata (or DFA) in this library, we can use the following example as a guide:
-```python
-from cse355_machine_design import DFA
-
-Q = {"q0", "q1"}
-Sigma = {"0", "1"}
-delta = {
-    ("q0", "0"): "q0",
-    ("q0", "1"): "q1",
-    ("q1", "0"): "q0",
-    ("q1", "1"): "q1",
-}
-q0 = "q0"
-F = {"q0"}
-
-M = DFA(Q, Sigma, delta, q0, F)
-```
-
-Here we are defining a DFA called `M` with:
-1. the states `q0` and `q1` (denoted by `Q`)
-2. an alphabet containing only `0` and `1` (denoted by `Sigma`)
-3. a transition function (denoted by `delta`) that maps a `current state, input symbol` pair to a new state.
-4. a start state (denoted by `q0`)
-5. and a set of final states (denoted by `F`)
-
-Together these make up the 5-tuple discussed in Sipser on page 35.
-
-When defining such DFAs, replace the definitions of each variable as you see fit. When you run the code, the library will let you know if your DFA is **invalid** in the sense that it violates one of the restrictions of DFAs. A not necessarily comprehensive list of possible violations is found below:
-+ Not all states found in transition function
-+ Transition function contains states not defined in the state set
-+ Transition function contains symbols not defined in the alphabet
-+ Start state is not found in the state set
-+ Some final/accepting states are not valid states.
-
-#### NFAs
-
-There are very few differences between NFAs and DFAs in this library, but for completeness here is an example covering the common ways to define an NFA:
-
-```python
-from cse355_machine_design import NFA
-
-Q = {"q0", "q1", "q2"}
-Sigma = {"0", "1"}
-delta = {
-    ("q0", "0"): {"q0", "q1"},
-    ("q1", "1"): {"q2"},
-    ("q2", "_"): {"q0"}
-}
-q0 = "q0"
-F = {"q2"}
-
-M = NFA(Q, Sigma, delta, q0, F)
-```
-The syntax and semantics are identical to the DFA, however we change the constructor to `NFA` and are no longer as constrained when defining our transition function `delta`.
-
-Additionally, we can see the use of the character `_` in the transition function. This is the character used by default to represent epsilon transitions.
-
-> [!NOTE]
-> In the rare cases in which you would like to have `_` as part of your input symbols, you can change the character representing epsilon via the constructor:
-> ```python
-> M = NFA(Q, Sigma, delta, q0, F, epsilon_char="$")
-> ```
-> Here we define the machine to treat `_` as a normal input symbol and to use `$` for epsilon internally.
->
-> Do note that this feature should be used as little as possible as it causes the library to perform additional runtime checks and may cause errors in existing codebases.
-
-#### PDAs
-
-PDAs or Push Down Automata are similar to NFA but with the added ability to use a depth-unlimited stack data structure for memory. 
-
-Heres how you can define one in code:
-```python
-from cse355_machine_design import PDA
-
-Q = {"q1", "q2", "q3", "q4"}
-Sigma = {"0", "1"}
-Gamma = {"0", "$"}
-q0 = "q1"
-F = {"q1", "q4"}
-delta = {
-    ("q1", "_", "_"): {("q2", "$")},
-    ("q2", "0", "_"): {("q2", "0")},
-    ("q2", "1", "0"): {("q3", "_")},
-    ("q3", "1", "0"): {("q3", "_")},
-    ("q3", "_", "$"): {("q4", "_")},
-}
-
-M = PDA(Q, Sigma, Gamma, delta, q0, F)
-```
-
-Unlike NFAs and DFAs, PDAs are a 6-tuple. The new addition is the stack alphabet `Gamma`.
-This is a set of characters that represent what can be stored in the stack.
-
-Delta is similarly changed to incorporate the appearance of the stack.
-
-In code we define delta as a dictionary, where the entries are of the form:
-`(Q,A,B): {(R,C), ...}` where:
-+ Q is the state you are traveling from
-+ A is the input symbol you are reading (optionally epsilon)
-+ B is the stack symbol you are popping from the top of the stack (optionally epsilon)
-+ R is the state you are going to
-+ C is the stack symbol you are pushing onto the top of the stack (optionally epsilon)
-
-The notation `{(R,C), ...}` represents that we can repeat multiple `(R,C)` pairs in a set format
+An open-source, high-performance library for defining, simulating, visualizing, and interacting with automata and Turing machines in Arizona State University's CSE 355: Introduction to Theoretical Computer Science courses.
+It is implemented in Rust and is available as a [Rust crate](https://crates.io/crates/cse355-machine-design) and [Python package](https://pypi.org/project/cse355-machine-design).
 
 
-### Machine Simulation
+## Getting Started
 
-An additional feature of this library is to perform simulation of a machine on a given input string.
+If you want to use the Python library (e.g., if you are a student in ASU's CSE 355), refer to the documentation on [PyPI](https://pypi.org/project/cse355-machine-design).
+If you want to use the Rust crate in another Rust project, refer to the [docs.rs](https://docs.rs/cse355-machine-design) documentation for installation and usage examples.
 
-> [!NOTE]
-> The syntax is the same across all machine types.
+Otherwise, clone/download this repository if you want to:
 
-#### Checking If A String Is Accepted
-
-We can check if a string is accepted using the `evaluate` method found on all machine objects.
-
-```python
-M.evaluate("10100")
-```
-
-This evaluates the machine `M` on the input string `10100`.
-
-If there is a mismatch between the charaters in the string and the alphabet of the machine, the library will throw an error.
-
-The method returns a `bool` representing if the machine accepted or rejected the string.
+- Build and run tests and benchmarks
+- Build the Python package locally
+- Contribute/develop new features or bug fixes
 
 > [!WARNING]
-> When evaluating PDAs a memory and time overhead is incurred with respect to the length of the input string.
-> When testing many strings keep the average string length low as it can slow down performance by a lot.
-> When testing a single string, attempting to evaluate strings greater than length 500 may take dozens of seconds on slower systems.
-> The time complexity is not great either, so further increases will result in even higher slowdowns.
+> Again, if you are an ASU student trying to use the repository for assignments in CSE 355, you do not need to clone or download this repository.
+> You just need to install the Python package; instructions for this are found on [PyPi](https://pypi.org/project/cse355-machine-design).
 
-#### Tracing Simulation
 
-When testing automata it is often very helpful to have some level of feedback on how strings are being evaluated.
+### Requirements
 
-If you wish to enable tracing, use the `enable_trace` flag in the `evaluate` method.
+This project supports Linux, macOS, and Windows.
+You need Rust, installed either [using `rustup`](https://www.rust-lang.org/tools/install) or via your system package manager of choice.
+This provides the `cargo` build system and dependency manager for compilation, testing, benchmarking, documentation, and packaging.
 
-```python
-M.evaluate("10100", enable_trace = 1)
+
+### Tests and Benchmarks
+
+`cse355-machine-design` comes with a variety of unit, integration, and documentation example tests ensuring the correct functionality.
+To run all tests, use:
+
+```shell
+cargo test
 ```
 
-Here we are going to check if `M` accepts or rejects the string `10100` with a **trace level** of `1`. A trace level is an integer representing how much tracing to do. A lower number (minimum 0: no tracing) represents less tracing and a higher number represents more tracing.
+To measure library performance, we've implemented benchmarks using the [`criterion`](https://crates.io/crates/criterion) crate.
+To run all benchmarks, use:
 
-Different machine types offer different maximum tracing levels. The current maximums can be seen here:
-
-| Machine Type | Max. Tracing Level |
-| ------------ | ------------------ |
-| DFA          | 1                  |
-| NFA          | 2                  |
-
-### Machine Visualization
-
-This entire time we have been discussing the formal definitions of machines, however it is often nice to have a state diagram to visualize the machine. This aids in the design loop by providing visual feedback on the automatas structure.
-
-To create a state diagram, we can make use of the `display_state_diagram` method on any machine object:
-
-```python
-M.display_state_diagram()
+```shell
+cargo bench
 ```
 
-This code will generate an HTML file containing your state diagram in the current directory and will **automatically** open your default web browser to render the file.
+See the [`criterion` command line options](https://bheisler.github.io/criterion.rs/book/user_guide/command_line_options.html) for details on how to run only specific benchmarks or save baselines for comparison.
 
-A sample screenshot of a generated state diagram is seen below:
 
-![A sample state diagram generated by the library](assets/README_state_diagram.png)
+### Building the Python Package Locally
 
-### Machine Submission
+We use [`pyo3`](https://crates.io/crates/pyo3) to package functionality from our Rust crate as a Python package called `cse355_machine_design`.
+To build this package locally, first create a virtual environment for this project using a manager of your choice.
+Then install [`maturin`](https://pypi.org/project/maturin/):
 
-Especially important for academic use of this library is the functionality to export student work for submission.
-
-When preparing your machines for submission follow the guide below:
-
-Please consider the following example question set:
-
-> 1. Design a DFA that accepts the language {w | w is of even length}
-> 2. Design a DFA that accepts the language {w | w has at least three zeros}
-
-Suppose you write your two defintions that you decided to call `M_EVEN` and `M_THREE_Z`.
-
-Before you do anything else, first add the following line of code to the top of the file:
-
-```python
-from cse355_machine_design import registry
+```shell
+pip install maturin      # using pip
+pipx install maturin     # using pipx
+uv tool install maturin  # using uv
 ```
 
-Next suppose you want to submit `M_EVEN` for the first problem. Then, after your machine definition, you would write:
+Within the virtual environment, build and install this project as a Python package:
 
-```python
-M_EVEN.submit_as_answer(1)
+```shell
+maturin develop --release
 ```
 
-For question two you would write:
+> [!TODO]
+> Add a Python usage example.
 
-```python
-M_THREE_Z.submit_as_answer(2)
-```
+See the [`cse355_machine_design::python` documentation](https://docs.rs/cse355-machine-design/latest/cse355_machine_design/python) for a complete list of functions exposed to the Python package along with usage examples.
 
-Finally, you can add the following line to the bottom of the file:
-```python
-registry.export_submissions()
-```
+To run the Python test suite, install [`pytest`](https://pypi.org/project/pytest/) in your virtual environment and then simply run `pytest`.
 
-That will create a JSON file called `submissions.json` that you can upload to Gradescope.
 
-> [!TIP]
-> It may help to comment out the calls to `display_state_diagram` in order to make the whole generation process faster and more consistent.
+## Contributing
+
+Have a suggestion for new features or a bug you need fixed?
+Open a [new issue](https://github.com/DaymudeLab/assembly-theory/issues/new).
+
+Want to contribute your own code?
+
+- Familiarize yourself with the [Rust API Guidelines](https://rust-lang.github.io/api-guidelines/checklist.html) and overall architecture of `cse355-machine-design`.
+- Development team members should work in individual feature branches.
+External contributors should work in repository forks.
+- Commit messages should follow [conventional commits](https://www.conventionalcommits.org).
+- Before opening a pull request onto `main`, make sure you rebase onto `main`, run `cargo fmt`, and resolve any issues raised by `cargo clippy`.
+- Open a [new pull request](https://github.com/DaymudeLab/cse355-machine-design/compare), provide a descriptive list of your changes (with references to any issues your PR resolves), and assign [@jdaymude](https://github.com/jdaymude) as a reviewer. 
+Your PR will not be reviewed unless it passes all GitHub Actions (compilation, formatting, tests, etc.).
+
+
+## Governance
+
+`cse355-machine-design` was originally developed by Saajan Maslanka ([@SaajanM](https://github.com/SaajanM)) under the supervision of Joshua J. Daymude ([@jdaymude](https://github.com/jdaymude)) and is now maintained solely by Joshua J. Daymude.
+
+
+## License
+
+`cse355-machine-design` is licensed under the [Apache License, Version 2.0](https://choosealicense.com/licenses/apache-2.0/) or the [MIT License](https://choosealicense.com/licenses/mit/), at your option.
+
+Unless you explicitly state otherwise, any contribution you intentionally submit for inclusion in this repository (as defined by Apache-2.0) shall be dual-licensed as above, without any additional terms or conditions.

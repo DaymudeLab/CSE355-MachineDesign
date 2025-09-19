@@ -1,0 +1,29 @@
+[package]
+name = "cse355-machine-design"
+version = "0.3.0"
+edition = "2024"
+description = "Rust and Python library supporting ASU's CSE 355 in the declaration, simulation, and visualization of Sipser-compatible automata"
+documentation = "https://docs.rs/cse355-machine-design"
+readme = "README-crate.md"
+repository = "https://github.com/DaymudeLab/CSE355-MachineDesign"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+petgraph = "0.8.2"
+pyo3 = "0.26.0"
+
+[dev-dependencies]
+criterion = "0.7.0"
+
+[features]
+default = ["python"]
+python = []
+
+[lib]
+name = "cse355_machine_design"
+path = "src/lib.rs"
+crate-type = ["rlib", "cdylib"]
+
+[[bench]]
+name = "benchmark"
+harness = false
