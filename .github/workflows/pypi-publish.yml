@@ -1,0 +1,30 @@
+# This workflow publishes the cse355-machine-design package to PyPI following
+# the trusted publishing example provided by uv.
+
+name: Publish Release to PyPI
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+      - name: Install Python 3.13
+        run: uv python install 3.13
+      - name: Build cse355-machine-design
+        run: uv build
+      # Note: Once we have tests, it would be good to add one here.
+      # See: https://docs.astral.sh/uv/guides/integration/github/#publishing-to-pypi
+      - name: Publish to PyPI
+        run: uv publish

@@ -1,15 +1,16 @@
-# CSE 355 Machine Design
+# cse355-machine-design
 
 A Python library for defining, simulating, visualizing, and interacting with automata and Turing machines in Arizona State University's CSE 355: Introduction to Theoretical Computer Science courses.
 
+
 ## Installation
 
-> [!IMPORTANT]
-> **Requires Python 3.10 or later**.
+Install `cse355-machine-design` using a Python virtual environment manager of your choosing:
 
-This library can be installed via the command:
-```bash
-pip install cse355-machine-design
+```shell
+pip install cse355-machine-design   # Using pip.
+pipx install cse355-machine-design  # Using pipx.
+uv add cse355-machine-design        # Using uv.
 ```
 
 ## Usage
