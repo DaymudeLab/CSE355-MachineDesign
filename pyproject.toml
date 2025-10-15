@@ -38,3 +38,8 @@ classifiers = [
 [project.urls]
 repository = "https://github.com/DaymudeLab/CSE355-MachineDesign"
 issues = "https://github.com/DaymudeLab/CSE355-MachineDesign/issues"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.18.2",
+]
