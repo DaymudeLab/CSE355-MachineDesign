@@ -1,148 +1,162 @@
-from collections import defaultdict
-from typing import Dict, Set, Tuple, Union
-from cse355_machine_design.automata.nfa import _NFA
-from itertools import product
+from cse355_machine_design.automata.base import _Automaton, State
 from cse355_machine_design.errors import DetailedError
-from cse355_machine_design import registry
-from cse355_machine_design.util import set_str
+
+from collections import defaultdict
+from itertools import product
 
 
-class _DFA(_NFA):
+class _DFA(_Automaton):
+    """
+    A deterministic finite automaton (DFA).
+    """
+
+    # Beyond the base automaton variables, a DFA defines a transition function
+    # that maps the current state and an input symbol to the next state.
+    _transitions: dict[tuple[State, str], State]
+
     def __init__(
         self,
-        Q: Set[str],
-        Sigma: Set[str],
-        delta: Dict[Tuple, str],
-        q0: str,
-        F: Set[str],
+        Q: set[State],
+        Sigma: set[str],
+        delta: dict[tuple[State, str], State],
+        q0: State,
+        F: set[State],
     ) -> None:
-        _delta: Dict[Tuple[str, str], Set[str]] = dict(map(lambda p: (p[0], {p[1]}), delta.items()))  # type: ignore
-        super().__init__(Q, Sigma, _delta, q0, F)
+        """
+        Create a new DFA and then validate it.
+        """
+        super().__init__("DFA", Q, Sigma, q0, F)
+        self._transitions = delta
+        self.validate()
 
-    def verify_legality(self) -> None:
-        for state in self._states:
-            if not isinstance(state, str):
-                raise DetailedError(
-                    "States are not strings",
-                    "Please define you states as strings. At this time the library does not support tuple or any other form of state. So if you have ('q1','q2'), you may rewrite it as '(q1,q2)'.",
-                )
+    def validate(self) -> None:
+        """
+        Validate this DFA according to its formal definition.
+        """
+        # Validate the DFA's base automaton variables.
+        super().validate()
 
-        transitions_valid = True
-        seen_transition: set[Tuple[str, str]] = set()
-        err_str = ""
-        for k, _v in self._transition_table.items():
-            v = _v.copy().pop()
-            transition_current_is_state = k[0] in self._states
-            transition_final_is_state = v in self._states
-            transition_input_is_alphabet = k[1] in self._input_symbols
-            if k in seen_transition:
-                err_str += f'delta has an attempt to redefine the transition from "{k[0]}" while reading input "{k[1]}"\n'
-            else:
-                seen_transition.add(k)
-            if not transition_current_is_state:
-                err_str += f'delta has a transition from "{k[0]}" on input "{k[1]}" to "{v}", but "{k[0]}" is not in Q\n'
-            if not transition_input_is_alphabet:
-                err_str += f'delta has a transition from "{k[0]}" on input "{k[1]}" to "{v}", but "{k[1]}" is not in Sigma\n'
-            if not transition_final_is_state:
-                err_str += f'delta has a transition from "{k[0]}" on input "{k[1]}" to "{v}", but "{v}" is not in Q\n'
+        # For each transition delta(q, x) = r in the DFA:
+        # - q should be in the state set
+        # - x should be in the alphabet
+        # - r should be in the set
+        err = ""
+        for (q, x), r in self._transitions.items():
+            qxr_err = ""
+            if q not in self._states:
+                qxr_err += f"\n- '{q}' is not in the state set {self._states}"
+            if x not in self._alphabet:
+                qxr_err += f"\n- '{x}' is not in the alphabet {self._alphabet}"
+            if r not in self._states:
+                qxr_err += f"\n- '{r}' is not in the state set {self._states}"
 
-            transitions_valid &= (
-                transition_current_is_state
-                and transition_input_is_alphabet
-                and transition_final_is_state
-            )
+            if qxr_err != "":
+                err += f"\nFor transition delta({q}, {x}) = {r}, {qxr_err}"
 
-        if not transitions_valid:
+        # A DFA's transition function must also cover every state-symbol pair.
+        for q, x in product(self._states, self._alphabet):
+            if not self._transitions.get((q, x)):
+                err += f"\nMissing transition delta({q}, {x})"
+
+        if err != "":
+            raise DetailedError("Invalid transition function", err)
+
+    def evaluate(self, input_str: str, trace: bool = False) -> bool:
+        """
+        Evaluate the given input string with this DFA.
+
+        :param input_str: An input string to evaluate.
+        :param trace: True iff tracing information should be printed.
+        :return: True iff the DFA accepts the input string.
+        """
+        # Validate the input string.
+        if not set(input_str) <= self._alphabet:
             raise DetailedError(
-                "(Q, Sigma and/or delta are incorrectly defined)", err_str
+                "Invalid input string",
+                f"The symbols {set(input_str) - self._alphabet} in the input "
+                + f"string '{input_str}' are not in the DFA's alphabet.",
             )
 
-        err_str = ""
-
-        all_entries = set(product(self._states, self._input_symbols))
-
-        # check all entries to make sure transition table is complete
-        transitions_complete = True
-        for necessary_transition in all_entries:
-            transition_found = necessary_transition in self._transition_table.keys()
-            if not transition_found:
-                err_str += f'Based on Q,Sigma, we need a transition from "{necessary_transition[0]}" to some other state on input symbol "{necessary_transition[1]}", but this transition was not found\n'
-            transitions_complete &= transition_found
-
-        if not transitions_complete:
-            raise DetailedError(
-                "(Based on the definitions of Q and Sigma, it is the case that delta is missing transitions)",
-                err_str,
-            )
-
-        start_valid = self._start_state in self._states
-        if not start_valid:
-            raise DetailedError(
-                "(Start state q_0 not found in Q)",
-                f'"{self._start_state}" was not found in Q',
-            )
-
-        err_str = ""
-        final_valid = True
-        for potential_state in self._final_states:
-            potential_state_valid = potential_state in self._states
-            if not potential_state_valid:
-                err_str += f'"{potential_state}" was declared as a final state, but it is not found in Q\n'
-            final_valid &= potential_state_valid
-
-        if not final_valid:
-            raise DetailedError("(F is not a subset of Q)", err_str)
-
-    def evaluate_one_step(
-        self, input_char: str, current_state: str, enable_trace=0
-    ) -> str:
-        if not (input_char in self._input_symbols):
-            raise DetailedError(
-                "Encountered input character not in alphabet",
-                f'The charachter "{input_char}" is not found in the alphabet {set_str(self._input_symbols)}',
-            )
-        new_state_internal = self._transition_table[(current_state, input_char)]
-        new_state = new_state_internal.copy().pop()
-        if enable_trace > 0:
+        # Computation starts from the start state.
+        if trace:
             print(
-                f'Reading input "{input_char}". This causes us to transition from "{current_state}" to "{new_state}"'
+                f"Evaluating input '{input_str}' from start state "
+                + f"'{self._start_state}'..."
             )
-        return new_state
-
-    def evaluate(self, input_str: str, enable_trace=0) -> Union[bool, None]:
-        if enable_trace > 0:
-            print(f'Starting at state "{self._start_state}"')
         current_state = self._start_state
+
+        # Trace through the input string one symbol at a time.
         for input_char in input_str:
-            current_state = self.evaluate_one_step(
-                input_char, current_state, enable_trace
-            )
-        is_final = current_state in self._final_states
-        accept_str = ("", "accept") if is_final else (" not", "reject")
-        if enable_trace > 0:
-            print(
-                f'Finished reading input. We are now in state "{current_state}". This is{accept_str[0]} a final state, so we {accept_str[1]}'
-            )
-        return current_state in self._final_states
-
-    def _generate_dot_string(self) -> str:
-        return super()._generate_dot_string()
-
-    def submit_as_answer(self, question_number: int):
-        registry.add_to_registry("dfa", question_number, self)
-
-    def export_to_dict(self) -> dict:
-        rep = {
-            "type": "dfa",
-            "states": list(self._states),
-            "input_symbols": list(self._input_symbols),
-            "finals": list(self._final_states),
-            "start_state": self._start_state,
-            "delta": list(
-                map(
-                    lambda p: {"from": p[0][0], "to": list(p[1]), "input": p[0][1]},
-                    self._transition_table.items(),
+            next_state = self._transitions[(current_state, input_char)]
+            if trace:
+                print(
+                    f"Read input '{input_char}'; transition states "
+                    + f"{current_state} -> {next_state}"
                 )
-            ),
-        }
-        return rep
+            current_state = next_state
+
+        # Input exhausted; determine accept/reject decision.
+        if trace:
+            print(f"Done reading input; currently in state {current_state}")
+        if current_state in self._accept_states:
+            if trace:
+                print(f"State {current_state} is accepting, so ACCEPT")
+            return True
+        else:
+            if trace:
+                print(f"State {current_state} is not accepting, so REJECT")
+            return False
+
+    def as_dict(self) -> dict:
+        """
+        Get a dict representation of this DFA.
+
+        :return: A dict representation of this DFA.
+        """
+        dict_rep = super().as_dict()
+        dict_rep["transitions"] = [
+            {"from": q, "input": x, "to": r} for (q, x), r in self._transitions.items()
+        ]
+
+        return dict_rep
+
+    def _as_dot_string(self) -> str:
+        """
+        Get a DOT string representation of this DFA for use in graphviz
+        visualization.
+
+        :return: A DOT string representation of this DFA.
+        """
+        # Define all states as DOT nodes.
+        states_str = ""
+        for state in self._states:
+            shape = "doublecircle" if state in self._accept_states else "circle"
+            states_str += f"{state} [shape={shape}]\n"
+
+        # Define all transitions as DOT edges, combining transitions with the
+        # same endpoints into one edge.
+        combined: defaultdict[tuple[State, State], list[str]] = defaultdict(list)
+        for (from_state, input_char), to_state in self._transitions.items():
+            combined[(from_state, to_state)].append(input_char)
+        edges_str = ""
+        for (from_state, to_state), input_chars in combined.items():
+            label = "".join([input_char + ", " for input_char in input_chars])[:-2]
+            edges_str += f"{from_state} -> {to_state} [label={label}];\n"
+
+        return f"""\
+            strict digraph {{
+                rankdir="LR";    // Direct graph from left to right.
+                ranksep=0.2;     // Minimum distance between ranks.
+                edge [minlen=3]; // Minimum edge length.
+
+                // State nodes.
+                {states_str.strip()}
+
+                // Incoming arrow for the start state.
+                nowhere [label="", shape=none, width=0, height=0];
+                nowhere -> {self._start_state} [minlen=default];
+
+                // Transition edges.
+                {edges_str.strip()}
+            }}\
+        """

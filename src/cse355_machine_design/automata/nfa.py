@@ -99,12 +99,19 @@ class _NFA(_Automaton):
         if trace:
             print(
                 f"Transition states {states} -> {closure} following zero or "
-                + "more epsilon transitions."
+                + "more epsilon transitions"
             )
 
         return closure
 
     def evaluate(self, input_str: str, trace: bool = False) -> bool:
+        """
+        Evaluate the given input string with this NFA.
+
+        :param input_str: An input string to evaluate.
+        :param trace: True iff tracing information should be printed.
+        :return: True iff the NFA accepts the input string.
+        """
         # Validate the input string.
         if not set(input_str) <= self._alphabet:
             raise DetailedError(
@@ -129,21 +136,21 @@ class _NFA(_Automaton):
             if trace:
                 print(
                     f"Transition states {current_states} -> {next_states} "
-                    + f"following exactly one '{input_char}' transition."
+                    + f"following exactly one '{input_char}' transition"
                 )
             current_states = self.epsilon_closure(next_states, trace)
 
         # Input exhausted; determine accept/reject decision.
         if trace:
-            print(f"Done reading input; currently in states {current_states}.")
+            print(f"Done reading input; currently in states {current_states}")
         reached_accept_states = current_states & self._accept_states
         if len(reached_accept_states) > 0:
             if trace:
-                print(f"Reached accepting states {reached_accept_states}, so ACCEPT.")
+                print(f"Reached accepting states {reached_accept_states}, so ACCEPT")
             return True
         else:
             if trace:
-                print(f"None of {current_states} are accepting, so REJECT.")
+                print(f"None of {current_states} are accepting, so REJECT")
             return False
 
     def as_dict(self) -> dict:
@@ -162,10 +169,10 @@ class _NFA(_Automaton):
 
     def _as_dot_string(self) -> str:
         """
-        Get a DOT string representation of this automaton for use in graphviz
+        Get a DOT string representation of this NFA for use in graphviz
         visualization.
 
-        :return: A DOT string representation of this automaton.
+        :return: A DOT string representation of this NFA.
         """
         # Define all states as DOT nodes.
         states_str = ""

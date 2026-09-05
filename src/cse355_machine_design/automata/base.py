@@ -95,7 +95,7 @@ class _Automaton(ABC):
     @abstractmethod
     def evaluate(self, input_str: str, trace: bool = False) -> bool:
         """
-        Evaluate this automaton on the given input string.
+        Evaluate the given input string with this automaton.
 
         :param input_str: An input string to evaluate.
         :param trace: True iff tracing information should be printed.
