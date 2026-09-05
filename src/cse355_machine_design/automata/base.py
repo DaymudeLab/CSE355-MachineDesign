@@ -1,4 +1,5 @@
 from cse355_machine_design import registry
+from cse355_machine_design.errors import DetailedError
 
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -17,24 +18,79 @@ class _Automaton(ABC):
 
     # Automata variables; note that the transition function is not included
     # here because it must be defined by a specific derived class.
-    _type: str  # Type of automata (DFA, NFA, PDA, etc.).
+    _automaton_type: str  # Type of automata (DFA, NFA, PDA, etc.).
     _states: set[State]  # State set Q.
     _alphabet: set[str]  # Alphabet Sigma.
     _start_state: State  # Start state q0.
     _accept_states: set[State]  # Accept states F.
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        automaton_type: str,
+        Q: set[State],
+        Sigma: set[str],
+        q0: State,
+        F: set[State],
+    ) -> None:
         """
-        Create a new automaton and then validate it.
-        """
-        self.validate()
+        Create a new base automaton.
 
-    @abstractmethod
+        :param automaton_type: A string type of automaton (e.g., "DFA").
+        :param Q: The automaton's state set.
+        :param Sigma: The automaton's alphabet.
+        :param q0: The automaton's start state.
+        :param F: The automaton's accepting/final states.
+        """
+        self._automaton_type = automaton_type
+        self._states = Q
+        self._alphabet = Sigma
+        self._start_state = q0
+        self._accept_states = F
+
     def validate(self) -> None:
         """
         Validate this automaton according to its formal definition.
         """
-        raise NotImplementedError("Abstract method not callable")
+        # There should be at least one alphabet symbol.
+        if len(self._alphabet) == 0:
+            raise DetailedError(
+                "Empty alphabet",
+                "Your finite automaton's alphabet should contain at least one "
+                + "symbol, but yours is empty.",
+            )
+
+        # Symbols in the alphabet should be length-one strings.
+        bad_symbols = [s for s in self._alphabet if len(s) != 1]
+        if len(bad_symbols) > 0:
+            raise DetailedError(
+                "Invalid alphabet symbol(s)",
+                "Alphabet symbols should be individual characters, but these "
+                + f"are not: {bad_symbols}.",
+            )
+
+        # There should be at least one state.
+        if len(self._states) == 0:
+            raise DetailedError(
+                "Empty state set",
+                "Your finite automaton should have at least one state, but "
+                + "yours doesn't have any.",
+            )
+
+        # The start state should be in the state set.
+        if self._start_state not in self._states:
+            raise DetailedError(
+                "Invalid start state",
+                f"The start state '{self._start_state}' must be one of the "
+                + f"finite automaton's states, {self._states}.",
+            )
+
+        # The accept states must all be in the state set.
+        if not self._accept_states <= self._states:
+            raise DetailedError(
+                "Invalid accept state(s)",
+                "Each accept state must be a state of the finite automaton, "
+                + f"but these are not: {self._accept_states - self._states}.",
+            )
 
     @abstractmethod
     def evaluate(self, input_str: str, trace: bool = False) -> bool:
@@ -54,16 +110,21 @@ class _Automaton(ABC):
 
         :param problem_number: The problem to submit this as an answer for.
         """
-        registry.add_to_registry(self._type, problem_number, self)
+        registry.add_to_registry(self._automaton_type, problem_number, self)
 
-    @abstractmethod
     def as_dict(self) -> dict:
         """
         Get a dict representation of this automaton.
 
         :return: A dict representation of this automaton.
         """
-        raise NotImplementedError("Abstract method not callable")
+        return {
+            "type": self._automaton_type,
+            "states": self._states,
+            "alphabet": self._alphabet,
+            "start_state": self._start_state,
+            "accept_states": self._accept_states,
+        }
 
     @abstractmethod
     def _as_dot_string(self) -> str:
@@ -76,6 +137,9 @@ class _Automaton(ABC):
         raise NotImplementedError("Abstract method not callable")
 
     def display_state_diagram(self) -> None:
+        """
+        Show the automaton's state diagram in browser.
+        """
         print("Opening state diagram in default browser...")
         html_contents = f"""\
             <!doctypehtml>
