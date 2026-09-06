@@ -36,27 +36,30 @@ class _DFA(_Automaton):
         # Validate the DFA's base automaton variables.
         super().validate()
 
-        # For each transition delta(q, x) = r in the DFA:
+        # For each transition delta(q, a) = r in the DFA:
         # - q should be in the state set
-        # - x should be in the alphabet
+        # - a should be in the input alphabet
         # - r should be in the set
         err = ""
-        for (q, x), r in self._transitions.items():
-            qxr_err = ""
+        for (q, a), r in self._transitions.items():
+            t_err = ""
             if q not in self._states:
-                qxr_err += f"\n- '{q}' is not in the state set {self._states}"
-            if x not in self._alphabet:
-                qxr_err += f"\n- '{x}' is not in the alphabet {self._alphabet}"
+                t_err += f"\n- '{q}' is not in the state set {self._states}"
+            if a not in self._input_alphabet:
+                t_err += (
+                    f"\n- '{a}' is not in the input alphabet "
+                    + f"{self._input_alphabet}"
+                )
             if r not in self._states:
-                qxr_err += f"\n- '{r}' is not in the state set {self._states}"
+                t_err += f"\n- '{r}' is not in the state set {self._states}"
 
-            if qxr_err != "":
-                err += f"\nFor transition delta({q}, {x}) = {r}, {qxr_err}"
+            if t_err != "":
+                err += f"\nFor transition delta({q}, {a}) = {r}, {t_err}"
 
         # A DFA's transition function must also cover every state-symbol pair.
-        for q, x in product(self._states, self._alphabet):
-            if not self._transitions.get((q, x)):
-                err += f"\nMissing transition delta({q}, {x})"
+        for q, a in product(self._states, self._input_alphabet):
+            if not self._transitions.get((q, a)):
+                err += f"\nMissing transition delta({q}, {a})"
 
         if err != "":
             raise DetailedError("Invalid transition function", err)
@@ -70,11 +73,12 @@ class _DFA(_Automaton):
         :return: True iff the DFA accepts the input string.
         """
         # Validate the input string.
-        if not set(input_str) <= self._alphabet:
+        if not set(input_str) <= self._input_alphabet:
             raise DetailedError(
                 "Invalid input string",
-                f"The symbols {set(input_str) - self._alphabet} in the input "
-                + f"string '{input_str}' are not in the DFA's alphabet.",
+                f"The symbols {set(input_str) - self._input_alphabet} in the "
+                + f"input string '{input_str}' are not in the DFA's input "
+                + "alphabet.",
             )
 
         # Computation starts from the start state.

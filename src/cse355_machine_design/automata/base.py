@@ -20,7 +20,7 @@ class _Automaton(ABC):
     # here because it must be defined by a specific derived class.
     _automaton_type: str  # Type of automata (DFA, NFA, PDA, etc.).
     _states: set[State]  # State set Q.
-    _alphabet: set[str]  # Alphabet Sigma.
+    _input_alphabet: set[str]  # Input alphabet Sigma.
     _start_state: State  # Start state q0.
     _accept_states: set[State]  # Accept states F.
 
@@ -37,13 +37,13 @@ class _Automaton(ABC):
 
         :param automaton_type: A string type of automaton (e.g., "DFA").
         :param Q: The automaton's state set.
-        :param Sigma: The automaton's alphabet.
+        :param Sigma: The automaton's input alphabet.
         :param q0: The automaton's start state.
         :param F: The automaton's accepting/final states.
         """
         self._automaton_type = automaton_type
         self._states = Q
-        self._alphabet = Sigma
+        self._input_alphabet = Sigma
         self._start_state = q0
         self._accept_states = F
 
@@ -51,21 +51,21 @@ class _Automaton(ABC):
         """
         Validate this automaton according to its formal definition.
         """
-        # There should be at least one alphabet symbol.
-        if len(self._alphabet) == 0:
+        # There should be at least one input alphabet symbol.
+        if len(self._input_alphabet) == 0:
             raise DetailedError(
-                "Empty alphabet",
-                "Your finite automaton's alphabet should contain at least one "
-                + "symbol, but yours is empty.",
+                "Empty input alphabet",
+                "Your finite automaton's input alphabet should contain at "
+                + "least one symbol, but yours is empty.",
             )
 
-        # Symbols in the alphabet should be length-one strings.
-        bad_symbols = [s for s in self._alphabet if len(s) != 1]
+        # Symbols in the input alphabet should be length-one strings.
+        bad_symbols = [s for s in self._input_alphabet if len(s) != 1]
         if len(bad_symbols) > 0:
             raise DetailedError(
-                "Invalid alphabet symbol(s)",
-                "Alphabet symbols should be individual characters, but these "
-                + f"are not: {bad_symbols}.",
+                "Invalid input alphabet symbol(s)",
+                "Input alphabet symbols should be individual characters, but "
+                + f"these are not: {bad_symbols}.",
             )
 
         # There should be at least one state.
@@ -121,7 +121,7 @@ class _Automaton(ABC):
         return {
             "type": self._automaton_type,
             "states": self._states,
-            "alphabet": self._alphabet,
+            "input_alphabet": self._input_alphabet,
             "start_state": self._start_state,
             "accept_states": self._accept_states,
         }

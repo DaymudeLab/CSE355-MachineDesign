@@ -70,11 +70,11 @@ class _PDA(_Automaton):
             )
 
         # The empty symbol should be outside the input alphabet.
-        if self._epsilon in self._alphabet:
+        if self._epsilon in self._input_alphabet:
             raise DetailedError(
                 "Epsilon symbol in input alphabet",
                 f"The epsilon symbol '{self._epsilon}' should not be in the "
-                + f"PDA's input alphabet, {self._alphabet}.",
+                + f"PDA's input alphabet, {self._input_alphabet}.",
             )
 
         # The empty symbol should be outside the stack alphabet.
@@ -97,10 +97,11 @@ class _PDA(_Automaton):
             t_err = ""
             if q not in self._states:
                 t_err += f"\n- '{q}' is not in the state set {self._states}"
-            if a not in self._alphabet and a != self._epsilon:
+            if a not in self._input_alphabet and a != self._epsilon:
                 t_err += (
-                    f"\n- '{a}' is not in the input alphabet {self._alphabet} "
-                    + f"nor is it the epsilon symbol '{self._epsilon}'"
+                    f"\n- '{a}' is not in the input alphabet "
+                    + f"{self._input_alphabet} nor is it the epsilon symbol "
+                    + f"'{self._epsilon}'"
                 )
             if b not in self._stack_alphabet and b != self._epsilon:
                 t_err += (
@@ -133,11 +134,12 @@ class _PDA(_Automaton):
         :return: True iff the PDA accepts the input string.
         """
         # Validate the input string.
-        if not set(input_str) <= self._alphabet:
+        if not set(input_str) <= self._input_alphabet:
             raise DetailedError(
                 "Invalid input string",
-                f"The symbols {set(input_str) - self._alphabet} in the input "
-                + f"string '{input_str}' are not in the PDA's input alphabet.",
+                f"The symbols {set(input_str) - self._input_alphabet} in the "
+                + f"input string '{input_str}' are not in the PDA's input "
+                + "alphabet.",
             )
 
         # TODO: Complete.

@@ -48,31 +48,34 @@ class _NFA(_Automaton):
                 + f"'{self._epsilon}' is not.",
             )
 
-        # The empty symbol should be outside the alphabet.
-        if self._epsilon in self._alphabet:
+        # The empty symbol should be outside the input alphabet.
+        if self._epsilon in self._input_alphabet:
             raise DetailedError(
-                "Epsilon symbol in alphabet",
+                "Epsilon symbol in input alphabet",
                 f"The epsilon symbol '{self._epsilon}' should not be in the "
-                + f"NFA's alphabet, {self._alphabet}.",
+                + f"NFA's input alphabet, {self._input_alphabet}.",
             )
 
-        # For each transition delta(q, x) = s in the NFA:
+        # For each transition delta(q, a) = s in the NFA:
         # - q should be in the state set
-        # - x should be in the alphabet or epsilon
+        # - a should be in the input alphabet or epsilon
         # - s should be a (possibly empty) subset of the state set
         err = ""
-        for (q, x), s in self._transitions.items():
-            qxs_err = ""
+        for (q, a), s in self._transitions.items():
+            t_err = ""
             if q not in self._states:
-                qxs_err += f"\n- '{q}' is not in the state set {self._states}"
-            if x not in self._alphabet and x != self._epsilon:
-                qxs_err += f"\n- '{x}' is not in the alphabet {self._alphabet}"
-                qxs_err += f" nor is it the epsilon symbol '{self._epsilon}'"
+                t_err += f"\n- '{q}' is not in the state set {self._states}"
+            if a not in self._input_alphabet and a != self._epsilon:
+                t_err += (
+                    f"\n- '{a}' is not in the input alphabet "
+                    + f"{self._input_alphabet} nor is it the epsilon symbol "
+                    + f"'{self._epsilon}'"
+                )
             if not s <= self._states:
-                qxs_err += f"\n- {s - self._states} are not in the state set"
+                t_err += f"\n- {s - self._states} are not in the state set"
 
-            if qxs_err != "":
-                err += f"\nFor transition delta({q}, {x}) = {s}, {qxs_err}"
+            if t_err != "":
+                err += f"\nFor transition delta({q}, {a}) = {s}, {t_err}"
 
         if err != "":
             raise DetailedError("Invalid transition function", err)
@@ -113,11 +116,12 @@ class _NFA(_Automaton):
         :return: True iff the NFA accepts the input string.
         """
         # Validate the input string.
-        if not set(input_str) <= self._alphabet:
+        if not set(input_str) <= self._input_alphabet:
             raise DetailedError(
                 "Invalid input string",
-                f"The symbols {set(input_str) - self._alphabet} in the input "
-                + f"string '{input_str}' are not in the NFA's alphabet.",
+                f"The symbols {set(input_str) - self._input_alphabet} in the "
+                + f"input string '{input_str}' are not in the NFA's input "
+                + "alphabet.",
             )
 
         # Computation starts from the epsilon closure of the start state.
