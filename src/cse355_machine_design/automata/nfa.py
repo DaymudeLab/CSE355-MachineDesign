@@ -129,14 +129,14 @@ class _NFA(_Automaton):
         current_states = self.epsilon_closure({self._start_state}, trace)
 
         # Trace through the input string one symbol at a time.
-        for input_char in input_str:
+        for input_sym in input_str:
             next_states = set()
             for q in current_states:
-                next_states |= self._transitions.get((q, input_char)) or set()
+                next_states |= self._transitions.get((q, input_sym)) or set()
             if trace:
                 print(
                     f"Transition states {current_states} -> {next_states} "
-                    + f"following exactly one '{input_char}' transition"
+                    + f"following exactly one '{input_sym}' transition"
                 )
             current_states = self.epsilon_closure(next_states, trace)
 
@@ -183,12 +183,12 @@ class _NFA(_Automaton):
         # Define all transitions as DOT edges, combining transitions with the
         # same endpoints into one edge.
         combined: defaultdict[tuple[State, State], list[str]] = defaultdict(list)
-        for (from_state, input_char), to_states in self._transitions.items():
+        for (from_state, input_sym), to_states in self._transitions.items():
             for to_state in to_states:
-                combined[(from_state, to_state)].append(input_char)
+                combined[(from_state, to_state)].append(input_sym)
         edges_str = ""
-        for (from_state, to_state), input_chars in combined.items():
-            label = "".join([input_char + ", " for input_char in input_chars])[:-2]
+        for (from_state, to_state), input_syms in combined.items():
+            label = "".join([input_sym + ", " for input_sym in input_syms])[:-2]
             edges_str += f"{from_state} -> {to_state} [label={label}];\n"
 
         return f"""\

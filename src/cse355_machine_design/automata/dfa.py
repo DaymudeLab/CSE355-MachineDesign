@@ -86,11 +86,11 @@ class _DFA(_Automaton):
         current_state = self._start_state
 
         # Trace through the input string one symbol at a time.
-        for input_char in input_str:
-            next_state = self._transitions[(current_state, input_char)]
+        for input_sym in input_str:
+            next_state = self._transitions[(current_state, input_sym)]
             if trace:
                 print(
-                    f"Read input '{input_char}'; transition states "
+                    f"Read input '{input_sym}'; transition states "
                     + f"{current_state} -> {next_state}"
                 )
             current_state = next_state
@@ -136,11 +136,11 @@ class _DFA(_Automaton):
         # Define all transitions as DOT edges, combining transitions with the
         # same endpoints into one edge.
         combined: defaultdict[tuple[State, State], list[str]] = defaultdict(list)
-        for (from_state, input_char), to_state in self._transitions.items():
-            combined[(from_state, to_state)].append(input_char)
+        for (from_state, input_sym), to_state in self._transitions.items():
+            combined[(from_state, to_state)].append(input_sym)
         edges_str = ""
-        for (from_state, to_state), input_chars in combined.items():
-            label = "".join([input_char + ", " for input_char in input_chars])[:-2]
+        for (from_state, to_state), input_syms in combined.items():
+            label = "".join([input_sym + ", " for input_sym in input_syms])[:-2]
             edges_str += f"{from_state} -> {to_state} [label={label}];\n"
 
         return f"""\

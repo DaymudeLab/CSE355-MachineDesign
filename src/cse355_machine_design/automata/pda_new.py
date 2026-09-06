@@ -176,17 +176,15 @@ class _PDA(_Automaton):
         combined: defaultdict[tuple[State, State], list[tuple[str, str, str]]] = (
             defaultdict(list)
         )
-        for (from_state, input_char, pop_char), to_pairs in self._transitions.items():
-            for to_state, push_char in to_pairs:
-                combined[(from_state, to_state)].append(
-                    (input_char, pop_char, push_char)
-                )
+        for (from_state, input_sym, pop_sym), to_pairs in self._transitions.items():
+            for to_state, push_sym in to_pairs:
+                combined[(from_state, to_state)].append((input_sym, pop_sym, push_sym))
         edges_str = ""
-        for (from_state, to_state), input_pop_push_chars in combined.items():
+        for (from_state, to_state), sym_triples in combined.items():
             label = "".join(
                 [
-                    f"{input_char}, {pop_char} -> {push_char}\n"
-                    for (input_char, pop_char, push_char) in input_pop_push_chars
+                    f"{input_sym}, {pop_sym} -> {push_sym}\n"
+                    for (input_sym, pop_sym, push_sym) in sym_triples
                 ]
             ).strip()
             edges_str += f"{from_state} -> {to_state} [label={label}];\n"
