@@ -99,6 +99,16 @@ class _CFG:
                 + f"CFG's set of terminals, {self._terminals}.",
             )
 
+        # Strip unnecessary epsilon terminals from rules' right-hand sides.
+        def strip_epsilon(rhs: tuple[str, ...]) -> tuple[str, ...]:
+            if self._epsilon not in rhs or len(rhs) == 1:
+                return rhs
+            else:
+                return tuple([x for x in rhs if x != self._epsilon])
+
+        for lhs in self._rules:
+            self._rules[lhs] = {strip_epsilon(rhs) for rhs in self._rules[lhs]}
+
         # Each rule should have a single variable on its left-hand side and one
         # or more variables or terminals on its right-hand side.
         err = ""
@@ -137,28 +147,58 @@ class _CFG:
 
     def normalize(self) -> None:
         """
-        Normalize this CFG by removing, in this order:
-        - rules of the form A -> epsilon, except possibly S -> epsilon
-        - unit rules of the form A -> B (and, by extension, cycles A =>* A)
-        - unproductive variables, or variables A with no derivation A =>* w,
-          where w is a string of terminals
-        - unreachable variables, or variables A with no derivation S =>* xAy,
-          where S is the start variable and x and y are possibly empty strings
-          of variables and terminals
+        Convert this CFG to Chomsky normal form by:
+        1. creating terminal rules X_i -> x_i and replacing non-singleton
+           instances of x_i on rules' right-hand sides with X_i
+        2. breaking rules A -> x_1x_2...x_k with k >= 3 into rules A -> x_1A_1,
+           A_1 -> x_2A_2, ..., A_{k-2} -> x_{k-1}x_k
+        3. removing rules of the form A -> epsilon where A != S
+        4. removing unit rules of the form A -> B (and thus cycles A =>* A)
+        5. removing unproductive variables, or variables A with no derivation
+           A =>* w, where w is a string of terminals
+        6. removing unreachable variables, or variables A with no derivation
+           S =>* xAy, where S is the start variable and x and y are possibly
+           empty strings of variables and terminals
 
         Details of these procedures can be found in Hopcroft, Motwani, and
-        Ullman (3rd ed., 2006), Chapter 7.1.
+        Ullman (3rd ed., 2006), Sections 7.1 and 7.4.2. In particular, the long
+        rules are broken up before removing the epsilon-rules so that the whole
+        conversion takes only quadratic time (instead of exponential time).
         """
-
-        # Strip unnecessary epsilon terminals.
-        def strip_epsilon(rhs: tuple[str, ...]) -> tuple[str, ...]:
-            if self._epsilon not in rhs or len(rhs) == 1:
-                return rhs
-            else:
-                return tuple([x for x in rhs if x != self._epsilon])
-
+        # Create a dedicated rule T -> t for each terminal t. Then, replace all
+        # instances of t on non-singleton right-hand sides of rules with T.
+        nonterminal_rules: dict[str, set[tuple[str, ...]]] = defaultdict(set)
+        for t in self._terminals:
+            nonterminal_rules[f"CNF_TERM_{t}"] = {tuple(t)}
         for lhs in self._rules:
-            self._rules[lhs] = {strip_epsilon(rhs) for rhs in self._rules[lhs]}
+            for rhs in self._rules[lhs]:
+                if len(rhs) == 1:
+                    nonterminal_rules[lhs].add(rhs)
+                else:
+                    nonterminal_rules[lhs].add(
+                        tuple(
+                            f"CNF_TERM_{x}" if x in self._terminals else x for x in rhs
+                        )
+                    )
+        self._rules = dict(nonterminal_rules)
+
+        # Break rules A -> x_1x_2...x_k with k >= 3 into chains of smaller
+        # rules A -> x_1A_1, A_1 -> x_2A_2, ..., A_{k-2} -> x_{k-1}x_k.
+        short_rules: dict[str, set[tuple[str, ...]]] = defaultdict(set)
+        for lhs in self._rules:
+            for rhs_ix, rhs in enumerate(self._rules[lhs]):
+                if len(rhs) <= 2:
+                    short_rules[lhs].add(rhs)
+                else:
+                    short_rules[lhs].add((rhs[0], f"CNF_{lhs}_{rhs_ix}_0"))
+                    for i in range(len(rhs) - 3):
+                        short_rules[f"CNF_{lhs}_{rhs_ix}_{i}"].add(
+                            (rhs[i + 1], f"CNF_{lhs}_{rhs_ix}_{i + 1}")
+                        )
+                    short_rules[f"CNF_{lhs}_{rhs_ix}_{len(rhs) - 3}"].add(
+                        (rhs[-2], rhs[-1])
+                    )
+        self._rules = dict(short_rules)
 
         # Identify all "nullable" variables A such that A =>* epsilon.
         nullable: set[str] = {self._epsilon}
@@ -172,7 +212,7 @@ class _CFG:
                         added_new_nullable = True
                         break
 
-        # Remove epsilon rules, except possibly S -> epsilon.
+        # Remove all epsilon rules except S -> epsilon, if it exists.
         nonepsilon_rules: dict[str, set[tuple[str, ...]]] = defaultdict(set)
         if tuple(self._epsilon) in self._rules[self._start_variable]:
             nonepsilon_rules[self._start_variable].add(tuple(self._epsilon))
