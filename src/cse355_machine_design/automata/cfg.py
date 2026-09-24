@@ -148,40 +148,26 @@ class _CFG:
     def normalize(self) -> None:
         """
         Convert this CFG to Chomsky normal form by:
-        1. creating terminal rules X_i -> x_i and replacing non-singleton
-           instances of x_i on rules' right-hand sides with X_i
-        2. breaking rules A -> x_1x_2...x_k with k >= 3 into rules A -> x_1A_1,
+        1. breaking rules A -> x_1x_2...x_k with k >= 3 into rules A -> x_1A_1,
            A_1 -> x_2A_2, ..., A_{k-2} -> x_{k-1}x_k
-        3. removing rules of the form A -> epsilon where A != S
-        4. removing unit rules of the form A -> B (and thus cycles A =>* A)
-        5. removing unproductive variables, or variables A with no derivation
+        2. removing rules of the form A -> epsilon, noting whether epsilon is
+           in the CFG's language
+        3. removing unit rules of the form A -> B (and thus cycles A =>* A)
+        4. removing unproductive variables, or variables A with no derivation
            A =>* w, where w is a string of terminals
-        6. removing unreachable variables, or variables A with no derivation
+        5. removing unreachable variables, or variables A with no derivation
            S =>* xAy, where S is the start variable and x and y are possibly
            empty strings of variables and terminals
+        6. creating terminal rules X_i -> x_i and replacing non-singleton
+           instances of x_i on rules' right-hand sides with X_i
+        7. adding S -> epsilon to the grammar if and only if it was determined
+           in Step 2 that epsilon is in the CFG's language
 
         Details of these procedures can be found in Hopcroft, Motwani, and
         Ullman (3rd ed., 2006), Sections 7.1 and 7.4.2. In particular, the long
         rules are broken up before removing the epsilon-rules so that the whole
         conversion takes only quadratic time (instead of exponential time).
         """
-        # Create a dedicated rule T -> t for each terminal t. Then, replace all
-        # instances of t on non-singleton right-hand sides of rules with T.
-        nonterminal_rules: dict[str, set[tuple[str, ...]]] = defaultdict(set)
-        for t in self._terminals:
-            nonterminal_rules[f"CNF_TERM_{t}"] = {tuple(t)}
-        for lhs in self._rules:
-            for rhs in self._rules[lhs]:
-                if len(rhs) == 1:
-                    nonterminal_rules[lhs].add(rhs)
-                else:
-                    nonterminal_rules[lhs].add(
-                        tuple(
-                            f"CNF_TERM_{x}" if x in self._terminals else x for x in rhs
-                        )
-                    )
-        self._rules = dict(nonterminal_rules)
-
         # Break rules A -> x_1x_2...x_k with k >= 3 into chains of smaller
         # rules A -> x_1A_1, A_1 -> x_2A_2, ..., A_{k-2} -> x_{k-1}x_k.
         short_rules: dict[str, set[tuple[str, ...]]] = defaultdict(set)
@@ -212,10 +198,9 @@ class _CFG:
                         added_new_nullable = True
                         break
 
-        # Remove all epsilon rules except S -> epsilon, if it exists.
+        # Remove epsilon rules, noting whether epsilon is in the language.
         nonepsilon_rules: dict[str, set[tuple[str, ...]]] = defaultdict(set)
-        if tuple(self._epsilon) in self._rules[self._start_variable]:
-            nonepsilon_rules[self._start_variable].add(tuple(self._epsilon))
+        epsilon_in_language = False
         for lhs in self._rules:
             for rhs in self._rules[lhs]:
                 # For each possible subset of the nullable variables in this
@@ -232,6 +217,8 @@ class _CFG:
                     )
                     if len(nulled_rhs) > 0:
                         nonepsilon_rules[lhs].add(nulled_rhs)
+                    elif lhs == self._start_variable:
+                        epsilon_in_language = True
         self._rules = dict(nonepsilon_rules)
 
         # Identify "unit" rules of the form A -> B where B is a variable.
@@ -310,3 +297,24 @@ class _CFG:
         self._variables = reachable_variables
         for lhs in self._rules.keys() - reachable_variables:
             del self._rules[lhs]
+
+        # Create a dedicated rule T -> t for each terminal t. Then, replace all
+        # instances of t on non-singleton right-hand sides of rules with T.
+        nonterminal_rules: dict[str, set[tuple[str, ...]]] = defaultdict(set)
+        for t in self._terminals:
+            nonterminal_rules[f"CNF_TERM_{t}"] = {tuple(t)}
+        for lhs in self._rules:
+            for rhs in self._rules[lhs]:
+                if len(rhs) == 1:
+                    nonterminal_rules[lhs].add(rhs)
+                else:
+                    nonterminal_rules[lhs].add(
+                        tuple(
+                            f"CNF_TERM_{x}" if x in self._terminals else x for x in rhs
+                        )
+                    )
+        self._rules = dict(nonterminal_rules)
+
+        # If epsilon is in the language of the original CFG, add S -> epsilon.
+        if epsilon_in_language:
+            self._rules[self._start_variable].add(tuple(self._epsilon))
