@@ -318,3 +318,70 @@ class _CFG:
         # If epsilon is in the language of the original CFG, add S -> epsilon.
         if epsilon_in_language:
             self._rules[self._start_variable].add(tuple(self._epsilon))
+
+    @typechecked
+    def generates_string(self, input_str: str) -> bool:
+        """
+        Use the Cocke-Younger-Kasami (CYK) algorithm to determine whether this
+        CFG can generate the given input string.
+
+        Details of this algorithm can be found in Hopcroft, Motwani, and Ullman
+        (3rd ed., 2006), Section 7.4.4.
+        """
+        # Validate the input string.
+        bad_symbols = set(input_str) - self._terminals
+        if len(bad_symbols) != 0:
+            raise DetailedError(
+                "Invalid input string",
+                f"The input string '{input_str}' contains symbols that are not"
+                + f" terminals of this CFG: {bad_symbols}.",
+            )
+
+        # CYK only works on CFGs in Chomsky normal form.
+        self.normalize()
+
+        # CNF guarantees that the empty string is in the language of the CFG if
+        # and only if S -> epsilon is a rule, where S is the start variable.
+        if input_str == "":
+            return tuple(self._epsilon) in self._rules[self._start_variable]
+
+        # Set up the table of entries X_{ij}, which are the variables A such
+        # that A =>* w_i...w_j, where w is the input string.
+        table: dict[tuple[int, int], set[str]] = defaultdict(set)
+
+        # It will be useful to know where each terminal is in the input string.
+        terminal_to_ixs: dict[str, set[int]] = {t: set() for t in self._terminals}
+        for ix, t in enumerate(input_str):
+            terminal_to_ixs[t].add(ix)
+
+        # In the base case, CNF guarantees that X_{ii} is just variables A such
+        # that A -> w_i is a rule in the grammar.
+        for lhs in self._rules:
+            for rhs in self._rules[lhs]:
+                if len(rhs) == 1 and rhs[0] in self._terminals:
+                    for ix in terminal_to_ixs[rhs[0]]:
+                        table[(ix, ix)].add(lhs)
+
+        # In the inductive case, a variable A is in X_{ij} if and only if there
+        # are variables B and C and an integer k such that:
+        # 1. i <= k < j
+        # 2. B is in X_{ik}, i.e., B =>* w_i...w_k
+        # 3. C is in X_{k+1,j}, i.e., C =>* w_{k+1}...w_j
+        # 4. A -> BC is a rule
+        # which altogether imply A -> BC =>* w_i...w_j, as desired.
+        for l in range(2, len(input_str) + 1):  # Substring lengths.
+            for i in range(len(input_str) + 1 - l):
+                j = i + l - 1
+                for k in range(i, j):
+                    for lhs in self._rules:
+                        for rhs in self._rules[lhs]:
+                            if (
+                                len(rhs) == 2
+                                and rhs[0] in table[(i, k)]
+                                and rhs[1] in table[(k + 1, j)]
+                            ):
+                                table[(i, j)].add(lhs)
+
+        # The input string w is in the language of this CFG if and only if the
+        # start variable S is in X_{0, |w| - 1}, i.e., if S =>* w.
+        return self._start_variable in table[(0, len(input_str) - 1)]
