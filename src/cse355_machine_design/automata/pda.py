@@ -1,6 +1,5 @@
 from cse355_machine_design.automata.base import _Automaton, State
 from cse355_machine_design.automata import CFG
-from cse355_machine_design.errors import DetailedError
 
 from collections import defaultdict, deque
 from itertools import product
@@ -52,43 +51,40 @@ class _PDA(_Automaton):
 
         # There should be at least one stack alphabet symbol.
         if len(self._stack_alphabet) == 0:
-            raise DetailedError(
-                "Empty stack alphabet",
-                "Your finite automaton's stack alphabet should contain at "
-                + "least one symbol, but yours is empty.",
+            raise ValueError(
+                "Empty stack alphabet. A PDA's stack alphabet should contain "
+                + "at least one symbol, but yours is empty."
             )
 
         # Symbols in the stack alphabet should be length-one strings.
         bad_symbols = [s for s in self._stack_alphabet if len(s) != 1]
         if len(bad_symbols) > 0:
-            raise DetailedError(
-                "Invalid stack alphabet symbol(s)",
-                "Stack alphabet symbols should be individual characters, but "
-                + f"these are not: {bad_symbols}.",
+            raise ValueError(
+                "Invalid stack alphabet symbol(s). Stack symbols should be "
+                + f"individual characters, but these are not: {bad_symbols}."
             )
 
         # The empty symbol should be a length-one string.
         if len(self._epsilon) != 1:
-            raise DetailedError(
-                "Invalid epsilon symbol",
-                "The epsilon symbol should be an individual character, but "
-                + f"'{self._epsilon}' is not.",
+            raise ValueError(
+                "Invalid epsilon symbol. The epsilon symbol should be an "
+                f"individual character, but '{self._epsilon}' is not."
             )
 
         # The empty symbol should be outside the input alphabet.
         if self._epsilon in self._input_alphabet:
-            raise DetailedError(
-                "Epsilon symbol in input alphabet",
-                f"The epsilon symbol '{self._epsilon}' should not be in the "
-                + f"PDA's input alphabet, {self._input_alphabet}.",
+            raise ValueError(
+                f"Invalid epsilon symbol. The epsilon symbol '{self._epsilon}'"
+                + " should not be in the PDA's input alphabet, "
+                + f"{self._input_alphabet}."
             )
 
         # The empty symbol should be outside the stack alphabet.
         if self._epsilon in self._stack_alphabet:
-            raise DetailedError(
-                "Epsilon symbol in stack alphabet",
-                f"The epsilon symbol '{self._epsilon}' should not be in the "
-                + f"PDA's stack alphabet, {self._stack_alphabet}.",
+            raise ValueError(
+                f"Invalid epsilon symbol. The epsilon symbol '{self._epsilon}'"
+                + " should not be in the PDA's stack alphabet, "
+                + f"{self._stack_alphabet}."
             )
 
         # For each transition delta(q, a, b) = s in the PDA:
@@ -129,7 +125,7 @@ class _PDA(_Automaton):
                 err += f"\nFor transition delta({q}, {a}, {b}) = {s}, {t_err}"
 
         if err != "":
-            raise DetailedError("Invalid transition function", err)
+            raise ValueError("Invalid transition function:" + err)
 
     @typechecked
     def evaluate(self, input_str: str, trace: bool = False) -> bool:
@@ -142,11 +138,10 @@ class _PDA(_Automaton):
         """
         # Validate the input string.
         if not set(input_str) <= self._input_alphabet:
-            raise DetailedError(
-                "Invalid input string",
-                f"The symbols {set(input_str) - self._input_alphabet} in the "
-                + f"input string '{input_str}' are not in the PDA's input "
-                + "alphabet.",
+            raise ValueError(
+                f"Invalid input string. The input '{input_str}' contains "
+                + f"symbols {set(input_str) - self._input_alphabet} that are "
+                + "not in the PDA's input alphabet."
             )
 
         # Determine whether the input string is accepted using the equivalent
@@ -365,11 +360,10 @@ class _PDA(_Automaton):
         # Verify that existing PDA states can't conflict with upcoming changes.
         conflict_states = [s for s in self._states if "cfg" in s]
         if len(conflict_states) > 0:
-            raise DetailedError(
-                "Conflicting state names",
-                "The PDA -> CFG conversion modifies this PDA with new states "
-                + "containing the string 'cfg', but this may conflict with "
-                + f"existing states: {conflict_states}.",
+            raise ValueError(
+                "Conflicting state names. The PDA -> CFG conversion adds new "
+                + "states containing the string 'cfg', but this may conflict "
+                + f"with existing states: {conflict_states}."
             )
 
         # First, modify this PDA so it has a single accept state.

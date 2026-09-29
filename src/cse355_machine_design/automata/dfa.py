@@ -1,5 +1,4 @@
 from cse355_machine_design.automata.base import _Automaton, State
-from cse355_machine_design.errors import DetailedError
 
 from collections import defaultdict
 from itertools import product
@@ -65,7 +64,7 @@ class _DFA(_Automaton):
                 err += f"\nMissing transition delta({q}, {a})"
 
         if err != "":
-            raise DetailedError("Invalid transition function", err)
+            raise ValueError("Invalid transition function:" + err)
 
     @typechecked
     def evaluate(self, input_str: str, trace: bool = False) -> bool:
@@ -78,11 +77,10 @@ class _DFA(_Automaton):
         """
         # Validate the input string.
         if not set(input_str) <= self._input_alphabet:
-            raise DetailedError(
-                "Invalid input string",
-                f"The symbols {set(input_str) - self._input_alphabet} in the "
-                + f"input string '{input_str}' are not in the DFA's input "
-                + "alphabet.",
+            raise ValueError(
+                f"Invalid input string. The input '{input_str}' contains "
+                + f"symbols {set(input_str) - self._input_alphabet} that are "
+                + "not in the DFA's input alphabet."
             )
 
         # Computation starts from the start state.

@@ -1,5 +1,3 @@
-from cse355_machine_design.errors import DetailedError
-
 from collections import defaultdict
 from itertools import chain, combinations
 
@@ -43,60 +41,61 @@ class _CFG:
         """
         # There should be at least one variable.
         if len(self._variables) == 0:
-            raise DetailedError(
-                "Empty variables set",
-                "A CFG should have at least one variable, but yours doesn't "
-                + "have any.",
+            raise ValueError(
+                "Empty variables set. A CFG should have at least one variable,"
+                + " but yours doesn't have any."
             )
 
         # There should be at least one terminal symbol.
         if len(self._terminals) == 0:
-            raise DetailedError(
-                "Empty terminals set",
-                "A CFG should have at least one terminal, but yours doesn't "
-                + "have any.",
+            raise ValueError(
+                "Empty terminals set. A CFG should have at least one terminal,"
+                + " but yours doesn't have any."
             )
 
         # Each terminal symbol should be a length-one string.
         bad_terminals = [t for t in self._terminals if len(t) != 1]
         if len(bad_terminals) > 0:
-            raise DetailedError(
-                "Invalid terminal symbol(s)",
-                "Terminal symbols should be individual characters, but these "
-                + f"are not: {bad_terminals}.",
+            raise ValueError(
+                "Invalid terminal symbol(s). Terminal symbols should be "
+                + f"individual characters, but these are not: {bad_terminals}."
             )
 
         # The sets of variables and terminals should be disjoint.
         overlap = self._variables & self._terminals
         if len(overlap) > 0:
-            raise DetailedError(
-                "Overlapping variables and terminals",
-                "Variables and terminals should be distinct, but these are "
-                + f"being used as both: {overlap}.",
+            raise ValueError(
+                "Overlapping symbols. Variable and terminal symbols should be "
+                + f"distinct, but these are being used as both: {overlap}."
             )
 
         # The start variable should be in the variables set.
         if not self._start_variable in self._variables:
-            raise DetailedError(
-                "Invalid start variable",
-                f"The start variable '{self._start_variable}' must be one of "
-                + f"the CFG's variables, {self._variables}.",
+            raise ValueError(
+                "Invalid start variable. The start variable "
+                + f"'{self._start_variable}' must be one of the CFG's "
+                + f"variables, {self._variables}."
             )
 
-        # The empty terminal should be outside the variables set.
+        # The empty symbol should be a length-one string.
+        if len(self._epsilon) != 1:
+            raise ValueError(
+                "Invalid epsilon symbol. The epsilon symbol should be an "
+                f"individual character, but '{self._epsilon}' is not."
+            )
+
+        # The empty symbol should be outside the input alphabet.
         if self._epsilon in self._variables:
-            raise DetailedError(
-                "Epsilon terminal in variables set",
-                f"The epsilon terminal '{self._epsilon}' should not be in the "
-                + f"CFG's set of variables, {self._variables}.",
+            raise ValueError(
+                f"Invalid epsilon symbol. The epsilon symbol '{self._epsilon}'"
+                + f" should not be in the CFG's variables, {self._variables}."
             )
 
-        # The empty terminal should be outside the terminals set.
+        # The empty symbol should be outside the stack alphabet.
         if self._epsilon in self._terminals:
-            raise DetailedError(
-                "Epsilon terminal in terminals set",
-                f"The epsilon terminal '{self._epsilon}' should not be in the "
-                + f"CFG's set of terminals, {self._terminals}.",
+            raise ValueError(
+                f"Invalid epsilon symbol. The epsilon symbol '{self._epsilon}'"
+                + f" should not be in the CFG's terminals, {self._terminals}."
             )
 
         # Strip unnecessary epsilon terminals from rules' right-hand sides.
@@ -135,14 +134,14 @@ class _CFG:
                     err += f"\n For rule '{lhs} -> {rhs}', {r_err}"
 
         if err != "":
-            raise DetailedError("Invalid rules", err)
+            raise ValueError("Invalid rules:" + err)
 
         # Some rule should have the start variable on its left-hand side.
         if self._start_variable not in self._rules:
-            raise DetailedError(
-                "Missing start rule(s)",
-                f"The start variable '{self._start_variable}' does not appear "
-                + "on the left-hand side of any rule.",
+            raise ValueError(
+                "Missing start rule(s). The start variable "
+                + f"'{self._start_variable}' does not appear on the left-hand "
+                + "side of any rule."
             )
 
     def normalize(self) -> None:
@@ -329,12 +328,11 @@ class _CFG:
         (3rd ed., 2006), Section 7.4.4.
         """
         # Validate the input string.
-        bad_symbols = set(input_str) - self._terminals
-        if len(bad_symbols) != 0:
-            raise DetailedError(
-                "Invalid input string",
-                f"The input string '{input_str}' contains symbols that are not"
-                + f" terminals of this CFG: {bad_symbols}.",
+        if not set(input_str) <= self._terminals:
+            raise ValueError(
+                f"Invalid input string. The input '{input_str}' contains "
+                + f"symbols {set(input_str) - self._terminals} that are not "
+                + "terminals of the CFG."
             )
 
         # CYK only works on CFGs in Chomsky normal form.

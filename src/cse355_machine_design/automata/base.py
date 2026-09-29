@@ -1,5 +1,4 @@
 from cse355_machine_design import registry
-from cse355_machine_design.errors import DetailedError
 
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -55,43 +54,39 @@ class _Automaton(ABC):
         """
         # There should be at least one input alphabet symbol.
         if len(self._input_alphabet) == 0:
-            raise DetailedError(
-                "Empty input alphabet",
-                "Your finite automaton's input alphabet should contain at "
-                + "least one symbol, but yours is empty.",
+            raise ValueError(
+                "Empty input alphabet. An automaton's input alphabet should "
+                + "contain at least one symbol, but yours is empty."
             )
 
         # Symbols in the input alphabet should be length-one strings.
         bad_symbols = [s for s in self._input_alphabet if len(s) != 1]
         if len(bad_symbols) > 0:
-            raise DetailedError(
-                "Invalid input alphabet symbol(s)",
-                "Input alphabet symbols should be individual characters, but "
-                + f"these are not: {bad_symbols}.",
+            raise ValueError(
+                "Invalid input alphabet symbol(s). Input symbols should be "
+                + f"individual characters, but these are not: {bad_symbols}."
             )
 
         # There should be at least one state.
         if len(self._states) == 0:
-            raise DetailedError(
-                "Empty state set",
-                "Your finite automaton should have at least one state, but "
-                + "yours doesn't have any.",
+            raise ValueError(
+                "Empty state set. An automaton should have at least one state,"
+                + " but yours doesn't have any."
             )
 
         # The start state should be in the state set.
         if self._start_state not in self._states:
-            raise DetailedError(
-                "Invalid start state",
-                f"The start state '{self._start_state}' must be one of the "
-                + f"finite automaton's states, {self._states}.",
+            raise ValueError(
+                f"Invalid start state. The start state '{self._start_state}' "
+                + f"must be one of the automaton's states, {self._states}."
             )
 
         # The accept states must all be in the state set.
         if not self._accept_states <= self._states:
-            raise DetailedError(
-                "Invalid accept state(s)",
-                "Each accept state must be a state of the finite automaton, "
-                + f"but these are not: {self._accept_states - self._states}.",
+            raise ValueError(
+                "Invalid accept state(s). Each accept state must be one of the"
+                + " automaton's states, but these are not: "
+                + f"{self._accept_states - self._states}."
             )
 
     @abstractmethod

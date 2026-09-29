@@ -1,5 +1,4 @@
 from cse355_machine_design.automata.base import _Automaton, State
-from cse355_machine_design.errors import DetailedError
 
 from collections import defaultdict
 
@@ -45,18 +44,17 @@ class _NFA(_Automaton):
 
         # The empty symbol should be a length-one string.
         if len(self._epsilon) != 1:
-            raise DetailedError(
-                "Invalid epsilon symbol",
-                "The epsilon symbol should be an individual character, but "
-                + f"'{self._epsilon}' is not.",
+            raise ValueError(
+                "Invalid epsilon symbol. The epsilon symbol should be an "
+                + f"individual character, but '{self._epsilon}' is not."
             )
 
         # The empty symbol should be outside the input alphabet.
         if self._epsilon in self._input_alphabet:
-            raise DetailedError(
-                "Epsilon symbol in input alphabet",
-                f"The epsilon symbol '{self._epsilon}' should not be in the "
-                + f"NFA's input alphabet, {self._input_alphabet}.",
+            raise ValueError(
+                f"Invalid epsilon symbol. The epsilon symbol '{self._epsilon}'"
+                + " should not be in the NFA's input alphabet, "
+                + f"{self._input_alphabet}."
             )
 
         # For each transition delta(q, a) = s in the NFA:
@@ -81,7 +79,7 @@ class _NFA(_Automaton):
                 err += f"\nFor transition delta({q}, {a}) = {s}, {t_err}"
 
         if err != "":
-            raise DetailedError("Invalid transition function", err)
+            raise ValueError("Invalid transition function:" + err)
 
     def epsilon_closure(self, states: set[State], trace: bool = False) -> set[State]:
         """
@@ -121,11 +119,10 @@ class _NFA(_Automaton):
         """
         # Validate the input string.
         if not set(input_str) <= self._input_alphabet:
-            raise DetailedError(
-                "Invalid input string",
-                f"The symbols {set(input_str) - self._input_alphabet} in the "
-                + f"input string '{input_str}' are not in the NFA's input "
-                + "alphabet.",
+            raise ValueError(
+                f"Invalid input string. The input '{input_str}' contains "
+                + f"symbols {set(input_str) - self._input_alphabet} that are "
+                + "not in the NFA's input alphabet."
             )
 
         # Computation starts from the epsilon closure of the start state.
