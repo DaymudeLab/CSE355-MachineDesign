@@ -2,8 +2,9 @@ from cse355_machine_design.automata.base import _Automaton, State
 from cse355_machine_design.automata import CFG
 from cse355_machine_design.errors import DetailedError
 
-from collections import defaultdict
+from collections import defaultdict, deque
 from itertools import product
+import math
 
 from typeguard import typechecked
 
@@ -148,8 +149,145 @@ class _PDA(_Automaton):
                 + "alphabet.",
             )
 
-        # TODO: Honor tracing parameter.
-        return self._as_cfg().generates_string(input_str)
+        # Determine whether the input string is accepted using the equivalent
+        # CFG. If tracing is not required, simply return that result; if it is,
+        # but the string is rejected, simply say so.
+        accepts_input_str = self._as_cfg().generates_string(input_str)
+        if not trace:
+            return accepts_input_str
+        elif not accepts_input_str:
+            print(
+                "No computation ever reaches an accept state after consuming "
+                + f"the input string '{input_str}', so REJECT"
+            )
+            return accepts_input_str
+
+        # Otherwise, the CFG computation guarantees that there is an accepting
+        # computation on this input string, so find it via breadth-first search
+        # over PDA configurations, i.e., triples of (current state, reamining
+        # input, and current stack contents).
+        type PDAConfig = tuple[State, str, deque[str]]
+
+        # Start by setting up some data structures. The first maps all explored
+        # PDA configurations to their unique integer indices. The second stores
+        # configurations in index order. The third is a directed graph with the
+        # indices as nodes and edges storing transition information. The last
+        # is the next layer of configurations to explore according to BFS.
+        start_config: PDAConfig = (self._start_state, input_str, deque())
+        configs: dict[PDAConfig, int] = {start_config: 0}
+        ix_to_config: list[PDAConfig] = [start_config]
+        config_graph: dict[int, dict[int, tuple[str, str, str]]] = {0: {}}
+        configs_to_extend: set[PDAConfig] = {start_config}
+
+        # Explore in BFS order until finding an accepting configuration, i.e.,
+        # one with an accept state that has consumed the whole input string.
+        accepting_ix: int | None = None
+        while accepting_ix is None:
+            next_configs_to_extend: set[PDAConfig] = set()
+            for current_config in configs_to_extend:
+                # Consider all transitions that this configuration enables.
+                current_state, current_input, current_stack = current_config
+                reads = [self._epsilon, current_input[0]]
+                pops = [self._epsilon]
+                if len(current_stack) > 0:
+                    pops.append(current_stack[-1])
+                for read, pop in product(reads, pops):
+                    if (current_state, read, pop) in self._transitions:
+                        for next_state, push in self._transitions[
+                            (current_state, read, pop)
+                        ]:
+                            # Create the configuration this transition goes to.
+                            next_input = (
+                                current_input
+                                if read == self._epsilon
+                                else current_input[1:]
+                            )
+                            next_stack = current_stack.copy()
+                            if pop != self._epsilon:
+                                next_stack.pop()
+                            if push != self._epsilon:
+                                next_stack.append(push)
+                            next_config: PDAConfig = (
+                                next_state,
+                                next_input,
+                                next_stack,
+                            )
+
+                            # If this is the first time this configuration has
+                            # been reached, add it to all the data structures.
+                            if next_config not in configs:
+                                ix_to_config.append(next_config)
+                                configs[next_config] = len(ix_to_config) - 1
+                                config_graph[configs[next_config]] = {}
+                                next_configs_to_extend.add(next_config)
+
+                            # Then update the configurations graph, noting that
+                            # this configuration is reachable from its parent
+                            # by reading/popping/pushing the given symbols.
+                            config_graph[configs[current_config]][
+                                configs[next_config]
+                            ] = (read, pop, push)
+
+                            # If this next configuration is accepting, mark it
+                            # so the BFS will stop before its next iteration.
+                            if (
+                                next_state in self._accept_states
+                                and len(next_input) == 0
+                            ):
+                                accepting_ix = configs[next_config]
+
+            # Instantiate the next layer of the BFS.
+            configs_to_extend = next_configs_to_extend.copy()
+
+        # Compute a shortest path in the configuration graph from the starting
+        # configuration to all other configurations. Even though we already did
+        # a BFS through reachable configurations, we need a shortest path to
+        # avoid falling into cycles consisting only of stack operations.
+        visited_configs: set[int] = set()
+        predecessor: dict[int, int] = {}
+        dist_to_config: list[float] = [0] + [math.inf] * (len(configs) - 1)
+        while len(visited_configs) < len(configs):
+            # Get any unexplored node adjacent to an explored one; this is the
+            # starting configuration for the first iteration.
+            for u in range(len(configs)):
+                if u not in visited_configs and dist_to_config[u] < math.inf:
+                    break
+
+            # Add this node to the explored nodes.
+            visited_configs.add(u)
+
+            # Update this node's neighbors' distances and predecessors.
+            for v in config_graph[u].keys() - visited_configs:
+                if dist_to_config[u] + 1 < dist_to_config[v]:
+                    dist_to_config[v] = dist_to_config[u] + 1
+                    predecessor[v] = u
+
+        # Gather the full accepting trace by backtracing the shortest path from
+        # the accepting configuration to the starting configuration.
+        tracing_strs = []
+        config_ix = accepting_ix
+        while config_ix != 0:
+            read, pop, push = config_graph[predecessor[config_ix]][config_ix]
+            state, remaining_input, stack = ix_to_config[config_ix]
+            tracing_strs.append(
+                f"Read '{read}', pop '{pop}', and push '{push}'\n"
+                + f"-> State: {state}\t"
+                + f"Remaining Input: {remaining_input}\t"
+                + f"Stack: {list(stack)}"
+            )
+            config_ix = predecessor[config_ix]
+        tracing_strs.reverse()
+
+        # Finally, print the tracing information and return.
+        print("Evaluating PDA from starting configuration:")
+        print(f"-> State: {self._start_state}\tInput: {input_str}\tStack: []")
+        for tracing_str in tracing_strs:
+            print(tracing_str)
+        print(
+            "This configuration is accepting (i.e., its state is an accept "
+            + "state and the input string is consumed), so ACCEPT"
+        )
+        return accepts_input_str
 
     def as_dict(self) -> dict:
         """
