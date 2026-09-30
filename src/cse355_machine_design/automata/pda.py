@@ -1,5 +1,5 @@
 from cse355_machine_design.automata.base import _Automaton, State
-from cse355_machine_design.automata import CFG
+from cse355_machine_design.automata.cfg import _CFG
 
 from collections import defaultdict, deque
 from itertools import product
@@ -349,7 +349,7 @@ class _PDA(_Automaton):
             }}\
         """
 
-    def _as_cfg(self) -> CFG:
+    def _as_cfg(self) -> _CFG:
         """
         Transform this PDA into an equivalent CFG.
 
@@ -451,7 +451,7 @@ class _PDA(_Automaton):
                         ) in mod_transitions[(s, b, u)]:
                             cfg_rules[f"({p},{q})"].add((a, f"({r},{s})", b))
 
-        return CFG(
+        return _CFG(
             V=cfg_variables,
             Sigma=self._input_alphabet,
             R=cfg_rules,
