@@ -52,6 +52,13 @@ class _Automaton(ABC):
         """
         Validate this automaton according to its formal definition.
         """
+        # There should be at least one state.
+        if len(self._states) == 0:
+            raise ValueError(
+                "Empty state set. An automaton should have at least one state,"
+                + " but yours doesn't have any."
+            )
+
         # There should be at least one input alphabet symbol.
         if len(self._input_alphabet) == 0:
             raise ValueError(
@@ -65,13 +72,6 @@ class _Automaton(ABC):
             raise ValueError(
                 "Invalid input alphabet symbol(s). Input symbols should be "
                 + f"individual characters, but these are not: {bad_symbols}."
-            )
-
-        # There should be at least one state.
-        if len(self._states) == 0:
-            raise ValueError(
-                "Empty state set. An automaton should have at least one state,"
-                + " but yours doesn't have any."
             )
 
         # The start state should be in the state set.
