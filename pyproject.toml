@@ -1,7 +1,3 @@
-[build-system]
-requires = ["uv_build>=0.8.22,<0.9.0"]
-build-backend = "uv_build"
-
 [project]
 name = "cse355-machine-design"
 version = "0.3.0"
@@ -40,7 +36,11 @@ classifiers = [
 repository = "https://github.com/DaymudeLab/CSE355-MachineDesign"
 issues = "https://github.com/DaymudeLab/CSE355-MachineDesign/issues"
 
+[build-system]
+requires = ["uv_build>=0.12.20,<0.13"]
+build-backend = "uv_build"
+
 [dependency-groups]
 dev = [
-    "mypy>=1.18.2",
+    "pytest>=9.1.1",
 ]
