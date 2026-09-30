@@ -1,18 +1,16 @@
 from cse355_machine_design.automata import DFA, State
 
 import pytest
+from typeguard import TypeCheckError
 
 
 class TestDFAInit:
     """
-    Tests for DFA initialization and validation.
+    Test DFA initialization and validation.
     """
 
     @pytest.fixture(autouse=True)
     def init_dfa_params(self) -> None:
-        """
-        Return a basic set of valid DFA parameters.
-        """
         self.Q: set[State] = {"q_0", "q_1", "q_2"}
         self.Sigma: set[str] = {"a", "b"}
         self.delta: dict[tuple[State, str], State] = {
@@ -36,6 +34,20 @@ class TestDFAInit:
             and D._start_state == self.q0
             and D._accept_states == self.F
         )
+
+    def test_bad_init_types(self) -> None:
+        with pytest.raises(TypeCheckError):
+            DFA({0}, self.Sigma, self.delta, self.q0, self.F)  # type: ignore
+        with pytest.raises(TypeCheckError):
+            DFA({"q_0", 1}, self.Sigma, self.delta, self.q0, self.F)  # type: ignore
+        with pytest.raises(TypeCheckError):
+            DFA(self.Q, {0, 1}, self.delta, self.q0, self.F)  # type: ignore
+        with pytest.raises(TypeCheckError):
+            DFA(self.Q, self.Sigma, {"q_0": "q_1"}, self.q0, self.F)  # type: ignore
+        with pytest.raises(TypeCheckError):
+            DFA(self.Q, self.Sigma, self.delta, 0, self.F)  # type: ignore
+        with pytest.raises(TypeCheckError):
+            DFA(self.Q, self.Sigma, self.delta, self.q0, {0, 1})  # type: ignore
 
     def test_empty_states(self) -> None:
         with pytest.raises(ValueError) as excinfo:
