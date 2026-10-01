@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 import render_html
-from typeguard import typechecked
 
 
 # Define a type alias for automata states (to avoid confusion with usual strs).
@@ -24,7 +23,6 @@ class _Automaton(ABC):
     _start_state: State  # Start state q0.
     _accept_states: set[State]  # Accept states F.
 
-    @typechecked
     def __init__(
         self,
         automaton_type: str,
@@ -100,7 +98,6 @@ class _Automaton(ABC):
         """
         raise NotImplementedError("Abstract method not callable")
 
-    @typechecked
     def submit_as_answer(self, problem_number: int) -> None:
         """
         Submit this automaton to the registry as the answer to a given problem.

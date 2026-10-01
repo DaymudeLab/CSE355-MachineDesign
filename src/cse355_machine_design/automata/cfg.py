@@ -1,8 +1,6 @@
 from collections import defaultdict
 from itertools import chain, combinations
 
-from typeguard import typechecked
-
 
 class _CFG:
     """
@@ -16,7 +14,6 @@ class _CFG:
     _start_variable: str
     _epsilon: str
 
-    @typechecked
     def __init__(
         self,
         V: set[str],
@@ -318,7 +315,6 @@ class _CFG:
         if epsilon_in_language:
             self._rules[self._start_variable].add(tuple(self._epsilon))
 
-    @typechecked
     def generates_string(self, input_str: str) -> bool:
         """
         Use the Cocke-Younger-Kasami (CYK) algorithm to determine whether this

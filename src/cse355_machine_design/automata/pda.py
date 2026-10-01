@@ -5,8 +5,6 @@ from collections import defaultdict, deque
 from itertools import product
 import math
 
-from typeguard import typechecked
-
 
 class _PDA(_Automaton):
     """
@@ -22,7 +20,6 @@ class _PDA(_Automaton):
     _epsilon: str
     _transitions: dict[tuple[State, str, str], set[tuple[State, str]]]
 
-    @typechecked
     def __init__(
         self,
         Q: set[State],
@@ -127,7 +124,6 @@ class _PDA(_Automaton):
         if err != "":
             raise ValueError("Invalid transition function:" + err)
 
-    @typechecked
     def evaluate(self, input_str: str, trace: bool = False) -> bool:
         """
         Evaluate the given input string with this PDA.

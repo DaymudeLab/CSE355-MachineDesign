@@ -3,8 +3,6 @@ from cse355_machine_design.automata.base import _Automaton, State
 from collections import defaultdict
 from itertools import product
 
-from typeguard import typechecked
-
 
 class _DFA(_Automaton):
     """
@@ -15,7 +13,6 @@ class _DFA(_Automaton):
     # that maps the current state and an input symbol to the next state.
     _transitions: dict[tuple[State, str], State]
 
-    @typechecked
     def __init__(
         self,
         Q: set[State],
@@ -66,7 +63,6 @@ class _DFA(_Automaton):
         if err != "":
             raise ValueError("Invalid transition function:" + err)
 
-    @typechecked
     def evaluate(self, input_str: str, trace: bool = False) -> bool:
         """
         Evaluate the given input string with this DFA.

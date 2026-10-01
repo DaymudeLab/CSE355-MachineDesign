@@ -2,8 +2,6 @@ from cse355_machine_design.automata.base import _Automaton, State
 
 from collections import defaultdict
 
-from typeguard import typechecked
-
 
 class _NFA(_Automaton):
     """
@@ -17,7 +15,6 @@ class _NFA(_Automaton):
     _epsilon: str
     _transitions: dict[tuple[State, str], set[State]]
 
-    @typechecked
     def __init__(
         self,
         Q: set[State],
@@ -108,7 +105,6 @@ class _NFA(_Automaton):
 
         return closure
 
-    @typechecked
     def evaluate(self, input_str: str, trace: bool = False) -> bool:
         """
         Evaluate the given input string with this NFA.
