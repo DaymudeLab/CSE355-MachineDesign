@@ -4,7 +4,7 @@ import pytest
 from typeguard import TypeCheckError
 
 
-class TestDFAInit:
+class TestDFAInitValidate:
     """
     Test DFA initialization and validation.
     """
@@ -119,4 +119,105 @@ class TestDFAInit:
         assert (
             "Invalid transition function:" in exc_str
             and "Missing transition delta(q_0, a)" in exc_str
+        )
+
+
+class TestDFAPruneUnreachable:
+    """
+    Test DFA removal of unreachable states.
+    """
+
+    def test_all_reachable(self) -> None:
+        Q: set[State] = {"q_0", "q_1", "q_2"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], State] = {
+            ("q_0", "a"): "q_0",
+            ("q_0", "b"): "q_1",
+            ("q_1", "a"): "q_0",
+            ("q_1", "b"): "q_2",
+            ("q_2", "a"): "q_0",
+            ("q_2", "b"): "q_1",
+        }
+        q0 = "q_0"
+        F = {"q_0", "q_2"}
+
+        D = DFA(Q, Sigma, delta, q0, F)
+        D.prune_unreachable()
+
+        assert (
+            D._states == Q
+            and D._input_alphabet == Sigma
+            and D._transitions == delta
+            and D._start_state == q0
+            and D._accept_states == F
+        )
+
+    def test_disconnected_components(self) -> None:
+        Q: set[State] = {"q_0", "q_1", "q_2", "q_3", "q_4"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], State] = {
+            ("q_0", "a"): "q_0",
+            ("q_0", "b"): "q_1",
+            ("q_1", "a"): "q_1",
+            ("q_1", "b"): "q_0",
+            ("q_2", "a"): "q_2",
+            ("q_2", "b"): "q_2",
+            ("q_3", "a"): "q_4",
+            ("q_3", "b"): "q_4",
+            ("q_4", "a"): "q_3",
+            ("q_4", "b"): "q_4",
+        }
+        q0 = "q_0"
+        F = {"q_0", "q_2"}
+
+        D = DFA(Q, Sigma, delta, q0, F)
+        D.prune_unreachable()
+
+        assert (
+            D._states == {"q_0", "q_1"}
+            and D._input_alphabet == Sigma
+            and D._transitions
+            == {
+                ("q_0", "a"): "q_0",
+                ("q_0", "b"): "q_1",
+                ("q_1", "a"): "q_1",
+                ("q_1", "b"): "q_0",
+            }
+            and D._start_state == q0
+            and D._accept_states == {"q_0"}
+        )
+
+    def test_backreferencing_components(self) -> None:
+        Q: set[State] = {"q_0", "q_1", "q_2", "q_3", "q_4"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], State] = {
+            ("q_0", "a"): "q_0",
+            ("q_0", "b"): "q_1",
+            ("q_1", "a"): "q_1",
+            ("q_1", "b"): "q_0",
+            ("q_2", "a"): "q_2",
+            ("q_2", "b"): "q_0",
+            ("q_3", "a"): "q_4",
+            ("q_3", "b"): "q_0",
+            ("q_4", "a"): "q_3",
+            ("q_4", "b"): "q_0",
+        }
+        q0 = "q_0"
+        F = {"q_0", "q_2"}
+
+        D = DFA(Q, Sigma, delta, q0, F)
+        D.prune_unreachable()
+
+        assert (
+            D._states == {"q_0", "q_1"}
+            and D._input_alphabet == Sigma
+            and D._transitions
+            == {
+                ("q_0", "a"): "q_0",
+                ("q_0", "b"): "q_1",
+                ("q_1", "a"): "q_1",
+                ("q_1", "b"): "q_0",
+            }
+            and D._start_state == q0
+            and D._accept_states == {"q_0"}
         )

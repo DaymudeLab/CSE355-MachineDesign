@@ -1,6 +1,6 @@
 from cse355_machine_design.automata.base import _Automaton, State
 
-from collections import defaultdict
+from collections import defaultdict, deque
 from itertools import product
 
 
@@ -62,6 +62,34 @@ class _DFA(_Automaton):
 
         if err != "":
             raise ValueError("Invalid transition function:" + err)
+
+    def prune_unreachable(self) -> None:
+        """
+        Remove all states that are unreachable from the start state.
+        """
+        # For each state, find all states reachable by a single transition.
+        out_states: dict[State, set[State]] = {
+            from_state: {
+                self._transitions[(from_state, input_sym)]
+                for input_sym in self._input_alphabet
+            }
+            for from_state in self._states
+        }
+
+        # Explore reachable states by BFS from the start state.
+        visited_states: set[State] = set()
+        states_to_explore: deque[State] = deque([self._start_state])
+        while len(states_to_explore) > 0:
+            state = states_to_explore.popleft()
+            visited_states.add(state)
+            states_to_explore.extend(out_states[state] - visited_states)
+
+        # Remove unreachable states and the transitions containing them.
+        self._states = visited_states
+        self._accept_states &= visited_states
+        for from_state, input_sym in list(self._transitions):
+            if from_state not in visited_states:
+                del self._transitions[(from_state, input_sym)]
 
     def evaluate(self, input_str: str, trace: bool = False) -> bool:
         """
