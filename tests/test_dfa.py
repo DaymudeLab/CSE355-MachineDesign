@@ -136,6 +136,18 @@ class TestDFAInitValidate:
         assert "Missing transition delta(q_0, a)" in exc_str
 
 
+class TestDFAEvaluate:
+    """
+    Test DFA string evaluation.
+    """
+
+    def test_bad_input_str(self) -> None:
+        D = DFA({"q_0"}, {"0"}, {("q_0", "0"): "q_0"}, "q_0", {"q_0"})
+        with pytest.raises(ValueError) as excinfo:
+            D.evaluate("011")
+        assert "Invalid input string." in str(excinfo.value)
+
+
 class TestDFAEmptyLanguage:
     """
     Test DFA empty language checking.
