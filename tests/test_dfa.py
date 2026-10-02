@@ -1,5 +1,7 @@
 from cse355_machine_design.automata import DFA, NFA, State
 
+from itertools import chain, product
+
 import pytest
 from typeguard import TypeCheckError
 
@@ -146,6 +148,124 @@ class TestDFAEvaluate:
         with pytest.raises(ValueError) as excinfo:
             D.evaluate("011")
         assert "Invalid input string." in str(excinfo.value)
+
+
+class TestDFAGenerateStrings:
+    """
+    Test DFA string generation.
+    """
+
+    def test_generate_strs_1(self) -> None:
+        # Recognizes {ab}, the language containing only the string "ab".
+        Q: set[State] = {"q_0", "q_1", "q_2", "q_3"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], State] = {
+            ("q_0", "a"): "q_1",
+            ("q_0", "b"): "q_3",
+            ("q_1", "a"): "q_3",
+            ("q_1", "b"): "q_2",
+            ("q_2", "a"): "q_3",
+            ("q_2", "b"): "q_3",
+            ("q_3", "a"): "q_3",
+            ("q_3", "b"): "q_3",
+        }
+        q0: State = "q_0"
+        F: set[State] = {"q_2"}
+
+        D_1 = DFA(Q, Sigma, delta, q0, F)
+        assert D_1.generate_strings(max_str_len=4) == {"ab"}
+
+    def test_generate_strs_2(self) -> None:
+        # Recognizes {w in {a, b}* | ab is a substring of w}.
+        Q: set[State] = {"q_0", "q_1", "q_2"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], State] = {
+            ("q_0", "a"): "q_1",
+            ("q_0", "b"): "q_0",
+            ("q_1", "a"): "q_1",
+            ("q_1", "b"): "q_2",
+            ("q_2", "a"): "q_2",
+            ("q_2", "b"): "q_2",
+        }
+        q0: State = "q_0"
+        F: set[State] = {"q_2"}
+
+        D_2 = DFA(Q, Sigma, delta, q0, F)
+        assert D_2.generate_strings(max_str_len=4) == {
+            "".join(p)
+            for p in chain.from_iterable(product(Sigma, repeat=r) for r in range(5))
+            if "ab" in "".join(p)
+        }
+
+    def test_generate_strs_3(self) -> None:
+        # Recognizes {w in {a, b}* | w has exactly two a's}.
+        Q: set[State] = {"q_0", "q_1", "q_2", "q_3"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], State] = {
+            ("q_0", "a"): "q_1",
+            ("q_0", "b"): "q_0",
+            ("q_1", "a"): "q_2",
+            ("q_1", "b"): "q_1",
+            ("q_2", "a"): "q_3",
+            ("q_2", "b"): "q_2",
+            ("q_3", "a"): "q_3",
+            ("q_3", "b"): "q_3",
+        }
+        q0: State = "q_0"
+        F: set[State] = {"q_2"}
+
+        D_3 = DFA(Q, Sigma, delta, q0, F)
+        assert D_3.generate_strings(max_str_len=4) == {
+            "".join(p)
+            for p in chain.from_iterable(product(Sigma, repeat=r) for r in range(5))
+            if "".join(p).count("a") == 2
+        }
+
+    def test_generate_strs_4(self) -> None:
+        # Recognizes {w in {a, b}* | w has an even number of a's}.
+        Q: set[State] = {"q_0", "q_1"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], State] = {
+            ("q_0", "a"): "q_1",
+            ("q_0", "b"): "q_0",
+            ("q_1", "a"): "q_0",
+            ("q_1", "b"): "q_1",
+        }
+        q0: State = "q_0"
+        F: set[State] = {"q_0"}
+
+        D_4 = DFA(Q, Sigma, delta, q0, F)
+        assert D_4.generate_strings(max_str_len=4) == {
+            "".join(p)
+            for p in chain.from_iterable(product(Sigma, repeat=r) for r in range(5))
+            if "".join(p).count("a") % 2 == 0
+        }
+
+    def test_generate_strs_with_limit(self) -> None:
+        # Recognizes {w in {a, b}* | w has exactly two a's}.
+        Q: set[State] = {"q_0", "q_1", "q_2", "q_3"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], State] = {
+            ("q_0", "a"): "q_1",
+            ("q_0", "b"): "q_0",
+            ("q_1", "a"): "q_2",
+            ("q_1", "b"): "q_1",
+            ("q_2", "a"): "q_3",
+            ("q_2", "b"): "q_2",
+            ("q_3", "a"): "q_3",
+            ("q_3", "b"): "q_3",
+        }
+        q0: State = "q_0"
+        F: set[State] = {"q_2"}
+
+        D = DFA(Q, Sigma, delta, q0, F)
+        assert D.generate_strings(max_str_len=4, max_strs=5) == {
+            "aa",
+            "aab",
+            "aba",
+            "baa",
+            "aabb",
+        }
 
 
 class TestDFAEmptyLanguage:

@@ -109,6 +109,40 @@ class _DFA(_Automaton):
                 print(f"State {current_state} is not accepting, so REJECT")
             return False
 
+    def generate_strings(
+        self, max_str_len: int, max_strs: int | None = None
+    ) -> set[str]:
+        """
+        Generate all strings in this DFA's language that are at most the given
+        length, or the first `max_strs` such strings if not None.
+
+        :param max_str_len: The maximum length of strings to generate.
+        :param max_str_len: The maximum number of strings to generate.
+        :returns: A list of generated strings from this DFA's language.
+        """
+        # BFS over the DFA in lexicographical order of possible input strings.
+        # Record all strings co-located with an accept state.
+        generated_strs: set[str] = set()
+        state_strs_to_explore: deque[tuple[State, str]] = deque(
+            [(self._start_state, "")]
+        )
+        input_syms = sorted(self._input_alphabet)
+        while len(state_strs_to_explore) > 0 and (
+            max_strs is None or len(generated_strs) < max_strs
+        ):
+            state, input_str = state_strs_to_explore.popleft()
+            if state in self._accept_states:
+                generated_strs.add(input_str)
+            if len(input_str) < max_str_len:
+                state_strs_to_explore.extend(
+                    [
+                        (self._transitions[(state, input_sym)], input_str + input_sym)
+                        for input_sym in input_syms
+                    ]
+                )
+
+        return generated_strs
+
     def _reachable_states(self) -> set[State]:
         """
         Collect all states that are reachable from the start state.

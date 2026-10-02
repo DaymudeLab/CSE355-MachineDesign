@@ -155,6 +155,19 @@ class _NFA(_Automaton):
                 print(f"None of {current_states} are accepting, so REJECT")
             return False
 
+    def generate_strings(
+        self, max_str_len: int, max_strs: int | None = None
+    ) -> set[str]:
+        """
+        Generate all strings in this NFA's language that are at most the given
+        length, or the first `max_strs` such strings if not None.
+
+        :param max_str_len: The maximum length of strings to generate.
+        :param max_str_len: The maximum number of strings to generate.
+        :returns: A list of generated strings from this NFA's language.
+        """
+        return self.as_dfa().generate_strings(max_str_len, max_strs)
+
     def compare(self, other: "_Automaton") -> AutomataComparison:
         """
         Compare this and the other finite automaton's languages by converting

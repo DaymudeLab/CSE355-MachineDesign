@@ -280,6 +280,19 @@ class _PDA(_Automaton):
         )
         return accepts_input_str
 
+    def generate_strings(
+        self, max_str_len: int, max_strs: int | None = None
+    ) -> set[str]:
+        """
+        Generate all strings in this PDA's language that are at most the given
+        length, or the first `max_strs` such strings if not None.
+
+        :param max_str_len: The maximum length of strings to generate.
+        :param max_str_len: The maximum number of strings to generate.
+        :returns: A list of generated strings from this PDA's language.
+        """
+        raise NotImplementedError("Not implemented yet!")
+
     def compare(self, other: "_Automaton") -> AutomataComparison:
         """
         Compare this and the other PDA's languages.

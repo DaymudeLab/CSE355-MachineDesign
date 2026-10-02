@@ -1,5 +1,7 @@
 from cse355_machine_design.automata import NFA, PDA, State
 
+from itertools import chain, product
+
 import pytest
 from typeguard import TypeCheckError
 
@@ -156,6 +158,116 @@ class TestNFAEvaluate:
         with pytest.raises(ValueError) as excinfo:
             N.evaluate("011")
         assert "Invalid input string." in str(excinfo.value)
+
+
+class TestNFAGenerateStrings:
+    """
+    Test NFA string generation.
+    """
+
+    def test_generate_strs_1(self) -> None:
+        # Recognizes {"", "a"}.
+        Q: set[State] = {"q_0", "q_1"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], set[State]] = {
+            ("q_0", "a"): {"q_1"},
+        }
+        q0: State = "q_0"
+        F: set[State] = {"q_0", "q_1"}
+
+        N = NFA(Q, Sigma, delta, q0, F)
+        assert N.generate_strings(max_str_len=4) == {"", "a"}
+
+    def test_generate_strs_2(self) -> None:
+        # Recognizes {w in {a, b}* | w ends with aa}.
+        Q: set[State] = {"q_0", "q_1", "q_2"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], set[State]] = {
+            ("q_0", "a"): {"q_0", "q_1"},
+            ("q_0", "b"): {"q_0"},
+            ("q_1", "a"): {"q_2"},
+        }
+        q0: State = "q_0"
+        F: set[State] = {"q_2"}
+
+        N = NFA(Q, Sigma, delta, q0, F)
+        assert N.generate_strings(max_str_len=4) == {
+            "".join(p)
+            for p in chain.from_iterable(product(Sigma, repeat=r) for r in range(5))
+            if len("".join(p)) >= 2 and "".join(p)[-2:] == "aa"
+        }
+
+    def test_generate_strs_3(self) -> None:
+        # Recognizes {w in {a, b}* | w contains aa or aba as a substring}.
+        Q: set[State] = {"q_0", "q_1", "q_2", "q_3"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], set[State]] = {
+            ("q_0", "a"): {"q_0", "q_1"},
+            ("q_0", "b"): {"q_0"},
+            ("q_1", "b"): {"q_2"},
+            ("q_1", "_"): {"q_2"},
+            ("q_2", "a"): {"q_3"},
+            ("q_3", "a"): {"q_3"},
+            ("q_3", "b"): {"q_3"},
+        }
+        q0: State = "q_0"
+        F: set[State] = {"q_3"}
+
+        N = NFA(Q, Sigma, delta, q0, F)
+        assert N.generate_strings(max_str_len=4) == {
+            "".join(p)
+            for p in chain.from_iterable(product(Sigma, repeat=r) for r in range(5))
+            if "aa" in "".join(p) or "aba" in "".join(p)
+        }
+
+    def test_generate_strs_4(self) -> None:
+        # Recognizes {w in {a, b}* | w has one or an even number of b's}.
+        Q: set[State] = {"q_0", "q_1", "q_2", "q_3"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], set[State]] = {
+            ("q_0", "a"): {"q_0"},
+            ("q_0", "b"): {"q_1"},
+            ("q_1", "a"): {"q_1"},
+            ("q_1", "b"): {"q_2"},
+            ("q_2", "a"): {"q_2"},
+            ("q_2", "b"): {"q_3"},
+            ("q_3", "a"): {"q_3"},
+            ("q_3", "b"): {"q_2"},
+        }
+        q0: State = "q_0"
+        F: set[State] = {"q_0", "q_1", "q_2"}
+
+        N = NFA(Q, Sigma, delta, q0, F)
+        assert N.generate_strings(max_str_len=4) == {
+            "".join(p)
+            for p in chain.from_iterable(product(Sigma, repeat=r) for r in range(5))
+            if "".join(p).count("b") == 1 or "".join(p).count("b") % 2 == 0
+        }
+
+    def test_generate_strs_with_limit(self) -> None:
+        # Recognizes {w in {a, b}* | w contains aa or aba as a substring}.
+        Q: set[State] = {"q_0", "q_1", "q_2", "q_3"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], set[State]] = {
+            ("q_0", "a"): {"q_0", "q_1"},
+            ("q_0", "b"): {"q_0"},
+            ("q_1", "b"): {"q_2"},
+            ("q_1", "_"): {"q_2"},
+            ("q_2", "a"): {"q_3"},
+            ("q_3", "a"): {"q_3"},
+            ("q_3", "b"): {"q_3"},
+        }
+        q0: State = "q_0"
+        F: set[State] = {"q_3"}
+
+        N = NFA(Q, Sigma, delta, q0, F)
+        assert N.generate_strings(max_str_len=4, max_strs=5) == {
+            "aa",
+            "aaa",
+            "aab",
+            "aba",
+            "baa",
+        }
 
 
 class TestNFAComparison:
