@@ -208,7 +208,7 @@ class _NFA(_Automaton):
 
         # Set up the corresponding DFA's elements.
         Q: set[State] = set()
-        Sigma: set[str] = self._input_alphabet.copy()
+        Sigma: set[str] = self._input_alphabet
         delta: dict[tuple[State, str], State] = {}
         q0: State = to_dfa_state(nfa_q0)
         F: set[State] = set()

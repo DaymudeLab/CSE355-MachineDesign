@@ -153,12 +153,10 @@ class _DFA(_Automaton):
         """
         Construct a DFA recognizing the complement of this DFA's language.
         """
-        # Note that because the transition function for a DFA maps (State, str)
-        # tuples to States and States are strs, a shallow copy is safe.
         return _DFA(
-            self._states.copy(),
-            self._input_alphabet.copy(),
-            self._transitions.copy(),
+            self._states,
+            self._input_alphabet,
+            self._transitions,
             self._start_state,
             self._states - self._accept_states,
         )
@@ -188,7 +186,7 @@ class _DFA(_Automaton):
             f"({self_state},{other_state})"
             for self_state, other_state in product(self._states, other._states)
         }
-        Sigma: set[str] = self._input_alphabet.copy()
+        Sigma: set[str] = self._input_alphabet
         delta: dict[tuple[State, str], State] = {
             (
                 f"({self_state},{other_state})",
