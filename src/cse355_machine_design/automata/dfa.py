@@ -1,4 +1,4 @@
-from cse355_machine_design.automata.base import _Automaton, State
+from cse355_machine_design.automata.base import _Automaton, AutomataComparison, State
 
 from collections import defaultdict, deque
 from itertools import product
@@ -206,7 +206,7 @@ class _DFA(_Automaton):
 
     def union(self, other: "_DFA", prune_unreachable: bool = True) -> "_DFA":
         """
-        Construct a DFA recognizing the union of this and the other DFAs'
+        Construct a DFA recognizing the union of this and the other DFA's
         languages using the product construction.
         """
         # Validate the DFAs' input alphabets.
@@ -240,7 +240,7 @@ class _DFA(_Automaton):
     def intersection(self, other: "_DFA", prune_unreachable: bool = True) -> "_DFA":
         """
         Construct a DFA recognizing the intersection of this and the other
-        DFAs' languages using the product construction.
+        DFA's languages using the product construction.
         """
         # Validate the DFAs' input alphabets.
         if self._input_alphabet != other._input_alphabet:
@@ -275,7 +275,7 @@ class _DFA(_Automaton):
 
     def difference(self, other: "_DFA", prune_unreachable: bool = True) -> "_DFA":
         """
-        Construct a DFA recognizing the difference of this and the other DFAs'
+        Construct a DFA recognizing the difference of this and the other DFA's
         languages using complement and intersection.
         """
         # Validate the DFAs' input alphabets.
@@ -301,7 +301,7 @@ class _DFA(_Automaton):
     ) -> "_DFA":
         """
         Construct a DFA recognizing the symmetric difference of this and the
-        other DFAs' languages using difference and union.
+        other DFA's languages using difference and union.
         """
         # Validate the DFAs' input alphabets.
         if self._input_alphabet != other._input_alphabet:
@@ -322,6 +322,46 @@ class _DFA(_Automaton):
         DFA; to retain unreachable states, see symmetric_difference().
         """
         return self.symmetric_difference(other)
+
+    def compare(self, other: "_Automaton") -> AutomataComparison:
+        """
+        Compare this and the other DFA's languages.
+
+        :param other: The other DFA to compare against.
+        :return: An AutomataComparison capturing the languages' relationship.
+        """
+        # Validate the other automaton's type.
+        if not isinstance(other, _DFA):
+            raise TypeError(
+                "Invalid comparison type. Cannot directly compare languages of"
+                + f" a DFA and a {type(other)}."
+            )
+
+        # Validate the DFAs' input alphabets.
+        if self._input_alphabet != other._input_alphabet:
+            raise ValueError(
+                "Mismatched input alphabets. Cannot compare languages of two "
+                + "DFAs with different alphabets: "
+                + f"{self._input_alphabet} != {other._input_alphabet}."
+            )
+
+        # Compute difference DFAs and test their emptiness.
+        self_minus_other = self - other
+        self_minus_other_empty = self_minus_other.empty()
+        other_minus_self = other - self
+        other_minus_self_empty = other_minus_self.empty()
+
+        # Determine the language comparison result.
+        if (self & other).empty():
+            return AutomataComparison.DISJOINT
+        elif not self_minus_other_empty and not other_minus_self_empty:
+            return AutomataComparison.PARTIAL
+        elif not other_minus_self_empty:
+            return AutomataComparison.SUBSET
+        elif not self_minus_other_empty:
+            return AutomataComparison.SUPERSET
+        else:
+            return AutomataComparison.EQUAL
 
     def as_dict(self) -> dict:
         """

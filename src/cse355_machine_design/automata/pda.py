@@ -1,4 +1,4 @@
-from cse355_machine_design.automata.base import _Automaton, State
+from cse355_machine_design.automata.base import _Automaton, AutomataComparison, State
 from cse355_machine_design.automata.cfg import _CFG
 
 from collections import defaultdict, deque
@@ -279,6 +279,15 @@ class _PDA(_Automaton):
             + "state and the input string is consumed), so ACCEPT"
         )
         return accepts_input_str
+
+    def compare(self, other: "_Automaton") -> AutomataComparison:
+        """
+        Compare this and the other PDA's languages.
+
+        :param other: The other PDA to compare against.
+        :return: An AutomataComparison capturing the languages' relationship.
+        """
+        raise NotImplementedError("Not implemented yet!")
 
     def as_dict(self) -> dict:
         """

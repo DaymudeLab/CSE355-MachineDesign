@@ -1,6 +1,7 @@
 from cse355_machine_design import registry
 
 from abc import ABC, abstractmethod
+from enum import Enum
 from pathlib import Path
 
 import render_html
@@ -8,6 +9,23 @@ import render_html
 
 # Define a type alias for automata states (to avoid confusion with usual strs).
 type State = str
+
+
+class AutomataComparison(Enum):
+    """
+    An enumeration for the results of automata language comparisons.
+    """
+
+    # The intersection of L(self) and L(other) is empty.
+    DISJOINT = 1
+    # L(self) and L(other) are not disjoint, but neither contains the other.
+    PARTIAL = 2
+    # L(self) is a proper subset of L(other).
+    SUBSET = 3
+    # L(self) is a proper superset of L(other).
+    SUPERSET = 4
+    # L(self) is equal to L(other).
+    EQUAL = 5
 
 
 class _Automaton(ABC):
@@ -95,6 +113,16 @@ class _Automaton(ABC):
         :param input_str: An input string to evaluate.
         :param trace: True iff tracing information should be printed.
         :return: True iff the automaton accepts the input string.
+        """
+        raise NotImplementedError("Abstract method not callable")
+
+    @abstractmethod
+    def compare(self, other: "_Automaton") -> AutomataComparison:
+        """
+        Compare this and the other automaton's languages.
+
+        :param other: The other automaton to compare against.
+        :return: An AutomataComparison capturing the languages' relationship.
         """
         raise NotImplementedError("Abstract method not callable")
 

@@ -1,4 +1,4 @@
-from cse355_machine_design.automata import DFA, State
+from cse355_machine_design.automata import AutomataComparison, DFA, NFA, State
 
 import pytest
 from typeguard import TypeCheckError
@@ -545,3 +545,123 @@ class TestDFAOperations:
         assert all(D.evaluate(w) for w in self.test_strs["D_2_only"])
         assert all(not D.evaluate(w) for w in self.test_strs["both"])
         assert all(not D.evaluate(w) for w in self.test_strs["neither"])
+
+
+class TestDFAComparison:
+    """
+    Test DFA language comparisons.
+    """
+
+    @pytest.fixture(autouse=True)
+    def setup_dfas(self) -> None:
+        # Recognizes {ab}, the language containing only the string "ab".
+        Q_1: set[State] = {"q_0", "q_1", "q_2", "q_3"}
+        Sigma_1: set[str] = {"a", "b"}
+        delta_1: dict[tuple[State, str], State] = {
+            ("q_0", "a"): "q_1",
+            ("q_0", "b"): "q_3",
+            ("q_1", "a"): "q_3",
+            ("q_1", "b"): "q_2",
+            ("q_2", "a"): "q_3",
+            ("q_2", "b"): "q_3",
+            ("q_3", "a"): "q_3",
+            ("q_3", "b"): "q_3",
+        }
+        q0_1: State = "q_0"
+        F_1: set[State] = {"q_2"}
+        self.D_1 = DFA(Q_1, Sigma_1, delta_1, q0_1, F_1)
+
+        # Recognizes {w in {a, b}* | ab is a substring of w}.
+        Q_2: set[State] = {"q_0", "q_1", "q_2"}
+        Sigma_2: set[str] = {"a", "b"}
+        delta_2: dict[tuple[State, str], State] = {
+            ("q_0", "a"): "q_1",
+            ("q_0", "b"): "q_0",
+            ("q_1", "a"): "q_1",
+            ("q_1", "b"): "q_2",
+            ("q_2", "a"): "q_2",
+            ("q_2", "b"): "q_2",
+        }
+        q0_2: State = "q_0"
+        F_2: set[State] = {"q_2"}
+        self.D_2 = DFA(Q_2, Sigma_2, delta_2, q0_2, F_2)
+
+        # Recognizes {w in {a, b}* | w has exactly two a's}.
+        Q_3: set[State] = {"q_0", "q_1", "q_2", "q_3"}
+        Sigma_3: set[str] = {"a", "b"}
+        delta_3: dict[tuple[State, str], State] = {
+            ("q_0", "a"): "q_1",
+            ("q_0", "b"): "q_0",
+            ("q_1", "a"): "q_2",
+            ("q_1", "b"): "q_1",
+            ("q_2", "a"): "q_3",
+            ("q_2", "b"): "q_2",
+            ("q_3", "a"): "q_3",
+            ("q_3", "b"): "q_3",
+        }
+        q0_3: State = "q_0"
+        F_3: set[State] = {"q_2"}
+        self.D_3 = DFA(Q_3, Sigma_3, delta_3, q0_3, F_3)
+
+        # Recognizes {w in {a, b}* | w has an even number of a's}.
+        Q_4: set[State] = {"q_0", "q_1"}
+        Sigma_4: set[str] = {"a", "b"}
+        delta_4: dict[tuple[State, str], State] = {
+            ("q_0", "a"): "q_1",
+            ("q_0", "b"): "q_0",
+            ("q_1", "a"): "q_0",
+            ("q_1", "b"): "q_1",
+        }
+        q0_4: State = "q_0"
+        F_4: set[State] = {"q_0"}
+        self.D_4 = DFA(Q_4, Sigma_4, delta_4, q0_4, F_4)
+
+        # Also recognizes {w in {a, b}* | w has an even number of a's}.
+        Q_5: set[State] = {"q_0", "q_1", "q_2", "q_3"}
+        Sigma_5: set[str] = {"a", "b"}
+        delta_5: dict[tuple[State, str], State] = {
+            ("q_0", "a"): "q_1",
+            ("q_0", "b"): "q_0",
+            ("q_1", "a"): "q_2",
+            ("q_1", "b"): "q_1",
+            ("q_2", "a"): "q_3",
+            ("q_2", "b"): "q_2",
+            ("q_3", "a"): "q_0",
+            ("q_3", "b"): "q_3",
+        }
+        q0_5: State = "q_0"
+        F_5: set[State] = {"q_0", "q_2"}
+        self.D_5 = DFA(Q_5, Sigma_5, delta_5, q0_5, F_5)
+
+    def test_invalid_comparison(self) -> None:
+        N = NFA({"q_0"}, {"a"}, {("q_0", "a"): {"q_0"}}, "q_0", {"q_0"})
+        with pytest.raises(TypeError) as excinfo:
+            self.D_1.compare(N)
+        assert "Invalid comparison type." in str(excinfo.value)
+
+    def test_mismatched_alphabets(self) -> None:
+        self.D_2._input_alphabet = {"0", "1"}
+        with pytest.raises(ValueError) as excinfo:
+            self.D_1.union(self.D_2)
+        assert "Mismatched input alphabets." in str(excinfo.value)
+
+    def test_disjoint(self) -> None:
+        assert self.D_1.compare(self.D_3) == AutomataComparison.DISJOINT
+
+    def test_partial_intersection(self) -> None:
+        assert self.D_2.compare(self.D_3) == AutomataComparison.PARTIAL
+
+    def test_subset_1(self) -> None:
+        assert self.D_1.compare(self.D_2) == AutomataComparison.SUBSET
+
+    def test_superset_1(self) -> None:
+        assert self.D_2.compare(self.D_1) == AutomataComparison.SUPERSET
+
+    def test_subset_2(self) -> None:
+        assert self.D_3.compare(self.D_4) == AutomataComparison.SUBSET
+
+    def test_superset_2(self) -> None:
+        assert self.D_4.compare(self.D_3) == AutomataComparison.SUPERSET
+
+    def test_equality(self) -> None:
+        assert self.D_4.compare(self.D_5) == AutomataComparison.EQUAL

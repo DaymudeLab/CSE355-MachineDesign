@@ -1,4 +1,5 @@
-from cse355_machine_design.automata.base import _Automaton, State
+from cse355_machine_design.automata.base import _Automaton, AutomataComparison, State
+from cse355_machine_design.automata.dfa import _DFA
 
 from collections import defaultdict
 
@@ -153,6 +154,23 @@ class _NFA(_Automaton):
             if trace:
                 print(f"None of {current_states} are accepting, so REJECT")
             return False
+
+    def compare(self, other: "_Automaton") -> AutomataComparison:
+        """
+        Compare this and the other NFA's languages.
+
+        :param other: The other NFA to compare against.
+        :return: An AutomataComparison capturing the languages' relationship.
+        """
+        raise NotImplementedError("Not implemented yet!")
+
+    def as_dfa(self) -> _DFA:
+        """
+        Convert this NFA into an equivalent DFA with the powerset construction.
+
+        :return: a DFA equivalent to this NFA.
+        """
+        pass
 
     def as_dict(self) -> dict:
         """
