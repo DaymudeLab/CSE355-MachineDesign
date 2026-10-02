@@ -1,4 +1,4 @@
-from cse355_machine_design.automata import NFA, State
+from cse355_machine_design.automata import NFA, PDA, State
 
 import pytest
 from typeguard import TypeCheckError
@@ -165,10 +165,48 @@ class TestNFAComparison:
 
     @pytest.fixture(autouse=True)
     def setup_nfas(self) -> None:
+        # Recognizes {"", "a"}.
+        Q: set[State] = {"q_0", "q_1"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], set[State]] = {
+            ("q_0", "a"): {"q_1"},
+        }
+        q0: State = "q_0"
+        F: set[State] = {"q_0", "q_1"}
+        self.N_1 = NFA(Q, Sigma, delta, q0, F)
+
+        # Recognizes {w in {a, b}* | w ends with aa}.
+        Q: set[State] = {"q_0", "q_1", "q_2"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], set[State]] = {
+            ("q_0", "a"): {"q_0", "q_1"},
+            ("q_0", "b"): {"q_0"},
+            ("q_1", "a"): {"q_2"},
+        }
+        q0: State = "q_0"
+        F: set[State] = {"q_2"}
+        self.N_2 = NFA(Q, Sigma, delta, q0, F)
+
+        # Recognizes {w in {a, b}* | w contains aa or aba as a substring}.
+        Q: set[State] = {"q_0", "q_1", "q_2", "q_3"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], set[State]] = {
+            ("q_0", "a"): {"q_0", "q_1"},
+            ("q_0", "b"): {"q_0"},
+            ("q_1", "b"): {"q_2"},
+            ("q_1", "_"): {"q_2"},
+            ("q_2", "a"): {"q_3"},
+            ("q_3", "a"): {"q_3"},
+            ("q_3", "b"): {"q_3"},
+        }
+        q0: State = "q_0"
+        F: set[State] = {"q_3"}
+        self.N_3 = NFA(Q, Sigma, delta, q0, F)
+
         # Recognizes {w in {a, b}* | w has one or an even number of b's}.
-        Q_1 = {"q_0", "q_1", "q_2", "q_3"}
-        Sigma_1 = {"a", "b"}
-        delta_1 = {
+        Q: set[State] = {"q_0", "q_1", "q_2", "q_3"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], set[State]] = {
             ("q_0", "a"): {"q_0"},
             ("q_0", "b"): {"q_1"},
             ("q_1", "a"): {"q_1"},
@@ -178,14 +216,14 @@ class TestNFAComparison:
             ("q_3", "a"): {"q_3"},
             ("q_3", "b"): {"q_2"},
         }
-        q0_1 = "q_0"
-        F_1 = {"q_0", "q_1", "q_2"}
-        self.N_1 = NFA(Q_1, Sigma_1, delta_1, q0_1, F_1)
+        q0: State = "q_0"
+        F: set[State] = {"q_0", "q_1", "q_2"}
+        self.N_4 = NFA(Q, Sigma, delta, q0, F)
 
         # Also recognizes {w in {a, b}* | w has one or an even number of b's}.
-        Q_2 = {"q_0", "q_1", "q_2", "q_3", "q_4"}
-        Sigma_2 = {"a", "b"}
-        delta_2 = {
+        Q: set[State] = {"q_0", "q_1", "q_2", "q_3", "q_4"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], set[State]] = {
             ("q_0", "_"): {"q_1", "q_3"},
             ("q_1", "a"): {"q_1"},
             ("q_1", "b"): {"q_2"},
@@ -195,12 +233,49 @@ class TestNFAComparison:
             ("q_4", "a"): {"q_4"},
             ("q_4", "b"): {"q_3"},
         }
-        q0_2 = "q_0"
-        F_2 = {"q_2", "q_3"}
-        self.N_2 = NFA(Q_2, Sigma_2, delta_2, q0_2, F_2)
+        q0: State = "q_0"
+        F: set[State] = {"q_2", "q_3"}
+        self.N_5 = NFA(Q, Sigma, delta, q0, F)
+
+    def test_invalid_comparison(self) -> None:
+        P = PDA(
+            Q={"q_0"},
+            Sigma={"a"},
+            Gamma={"a"},
+            delta={("q_0", "a", "_"): {("q_0", "a")}},
+            q0="q_0",
+            F=set(),
+        )
+        with pytest.raises(TypeError) as excinfo:
+            self.N_1.compare(P)
+        assert "Invalid comparison type." in str(excinfo.value)
+
+    def test_mismatched_alphabets(self) -> None:
+        self.N_2._input_alphabet = {"0", "1"}
+        with pytest.raises(ValueError) as excinfo:
+            self.N_1.compare(self.N_2)
+        assert "Mismatched input alphabets." in str(excinfo.value)
+
+    def test_disjoint(self) -> None:
+        assert self.N_1.is_disjoint(self.N_2)
+
+    def test_partial_intersection(self) -> None:
+        assert self.N_2.partially_intersects(self.N_4)
+
+    def test_subset_1(self) -> None:
+        assert self.N_1 < self.N_4 and self.N_1 <= self.N_4 and self.N_1 != self.N_4
+
+    def test_superset_1(self) -> None:
+        assert self.N_4 > self.N_1 and self.N_4 >= self.N_1 and self.N_1 != self.N_4
+
+    def test_subset_2(self) -> None:
+        assert self.N_2 < self.N_3 and self.N_2 <= self.N_3 and self.N_2 != self.N_3
+
+    def test_superset_2(self) -> None:
+        assert self.N_3 > self.N_2 and self.N_3 >= self.N_2 and self.N_2 != self.N_3
 
     def test_equality(self) -> None:
-        assert self.N_1 == self.N_2
+        assert self.N_4 == self.N_5 and self.N_4 <= self.N_5 and self.N_5 >= self.N_4
 
 
 class TestNFAToDFAConversion:

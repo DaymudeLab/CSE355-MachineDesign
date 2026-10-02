@@ -581,9 +581,9 @@ class TestDFAComparison:
     @pytest.fixture(autouse=True)
     def setup_dfas(self) -> None:
         # Recognizes {ab}, the language containing only the string "ab".
-        Q_1: set[State] = {"q_0", "q_1", "q_2", "q_3"}
-        Sigma_1: set[str] = {"a", "b"}
-        delta_1: dict[tuple[State, str], State] = {
+        Q: set[State] = {"q_0", "q_1", "q_2", "q_3"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], State] = {
             ("q_0", "a"): "q_1",
             ("q_0", "b"): "q_3",
             ("q_1", "a"): "q_3",
@@ -593,14 +593,14 @@ class TestDFAComparison:
             ("q_3", "a"): "q_3",
             ("q_3", "b"): "q_3",
         }
-        q0_1: State = "q_0"
-        F_1: set[State] = {"q_2"}
-        self.D_1 = DFA(Q_1, Sigma_1, delta_1, q0_1, F_1)
+        q0: State = "q_0"
+        F: set[State] = {"q_2"}
+        self.D_1 = DFA(Q, Sigma, delta, q0, F)
 
         # Recognizes {w in {a, b}* | ab is a substring of w}.
-        Q_2: set[State] = {"q_0", "q_1", "q_2"}
-        Sigma_2: set[str] = {"a", "b"}
-        delta_2: dict[tuple[State, str], State] = {
+        Q: set[State] = {"q_0", "q_1", "q_2"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], State] = {
             ("q_0", "a"): "q_1",
             ("q_0", "b"): "q_0",
             ("q_1", "a"): "q_1",
@@ -608,14 +608,14 @@ class TestDFAComparison:
             ("q_2", "a"): "q_2",
             ("q_2", "b"): "q_2",
         }
-        q0_2: State = "q_0"
-        F_2: set[State] = {"q_2"}
-        self.D_2 = DFA(Q_2, Sigma_2, delta_2, q0_2, F_2)
+        q0: State = "q_0"
+        F: set[State] = {"q_2"}
+        self.D_2 = DFA(Q, Sigma, delta, q0, F)
 
         # Recognizes {w in {a, b}* | w has exactly two a's}.
-        Q_3: set[State] = {"q_0", "q_1", "q_2", "q_3"}
-        Sigma_3: set[str] = {"a", "b"}
-        delta_3: dict[tuple[State, str], State] = {
+        Q: set[State] = {"q_0", "q_1", "q_2", "q_3"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], State] = {
             ("q_0", "a"): "q_1",
             ("q_0", "b"): "q_0",
             ("q_1", "a"): "q_2",
@@ -625,27 +625,27 @@ class TestDFAComparison:
             ("q_3", "a"): "q_3",
             ("q_3", "b"): "q_3",
         }
-        q0_3: State = "q_0"
-        F_3: set[State] = {"q_2"}
-        self.D_3 = DFA(Q_3, Sigma_3, delta_3, q0_3, F_3)
+        q0: State = "q_0"
+        F: set[State] = {"q_2"}
+        self.D_3 = DFA(Q, Sigma, delta, q0, F)
 
         # Recognizes {w in {a, b}* | w has an even number of a's}.
-        Q_4: set[State] = {"q_0", "q_1"}
-        Sigma_4: set[str] = {"a", "b"}
-        delta_4: dict[tuple[State, str], State] = {
+        Q: set[State] = {"q_0", "q_1"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], State] = {
             ("q_0", "a"): "q_1",
             ("q_0", "b"): "q_0",
             ("q_1", "a"): "q_0",
             ("q_1", "b"): "q_1",
         }
-        q0_4: State = "q_0"
-        F_4: set[State] = {"q_0"}
-        self.D_4 = DFA(Q_4, Sigma_4, delta_4, q0_4, F_4)
+        q0: State = "q_0"
+        F: set[State] = {"q_0"}
+        self.D_4 = DFA(Q, Sigma, delta, q0, F)
 
         # Also recognizes {w in {a, b}* | w has an even number of a's}.
-        Q_5: set[State] = {"q_0", "q_1", "q_2", "q_3"}
-        Sigma_5: set[str] = {"a", "b"}
-        delta_5: dict[tuple[State, str], State] = {
+        Q: set[State] = {"q_0", "q_1", "q_2", "q_3"}
+        Sigma: set[str] = {"a", "b"}
+        delta: dict[tuple[State, str], State] = {
             ("q_0", "a"): "q_1",
             ("q_0", "b"): "q_0",
             ("q_1", "a"): "q_2",
@@ -655,9 +655,9 @@ class TestDFAComparison:
             ("q_3", "a"): "q_0",
             ("q_3", "b"): "q_3",
         }
-        q0_5: State = "q_0"
-        F_5: set[State] = {"q_0", "q_2"}
-        self.D_5 = DFA(Q_5, Sigma_5, delta_5, q0_5, F_5)
+        q0: State = "q_0"
+        F: set[State] = {"q_0", "q_2"}
+        self.D_5 = DFA(Q, Sigma, delta, q0, F)
 
     def test_invalid_comparison(self) -> None:
         N = NFA({"q_0"}, {"a"}, {("q_0", "a"): {"q_0"}}, "q_0", {"q_0"})

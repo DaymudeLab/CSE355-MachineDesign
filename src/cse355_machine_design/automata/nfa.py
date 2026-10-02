@@ -170,6 +170,14 @@ class _NFA(_Automaton):
                 + f" a NFA and a {type(other)}."
             )
 
+        # Validate the automata's input alphabets.
+        if self._input_alphabet != other._input_alphabet:
+            raise ValueError(
+                "Mismatched input alphabets. Cannot compare languages of two "
+                + "finite automata with different alphabets: "
+                + f"{self._input_alphabet} != {other._input_alphabet}."
+            )
+
         # Perform the necessary conversions and then compare languages.
         if isinstance(other, _DFA):
             return self.as_dfa().compare(other)
