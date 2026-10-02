@@ -1,7 +1,7 @@
 from cse355_machine_design.automata.base import _Automaton, AutomataComparison, State
 from cse355_machine_design.automata.dfa import _DFA
 
-from collections import defaultdict
+from collections import defaultdict, deque
 
 
 class _NFA(_Automaton):
@@ -166,11 +166,63 @@ class _NFA(_Automaton):
 
     def as_dfa(self) -> _DFA:
         """
-        Convert this NFA into an equivalent DFA with the powerset construction.
+        Convert this NFA into an equivalent DFA using an efficient BFS version
+        of the powerset construction. Note that unreachable states are omitted
+        automatically by this method.
 
         :return: a DFA equivalent to this NFA.
         """
-        pass
+        # Initialize the BFS through the NFA's powerset representation with the
+        # epsilon closure of the NFA's start state.
+        nfa_q0 = self.epsilon_closure({self._start_state})
+        nfa_state_sets_to_explore: deque[set[State]] = deque([nfa_q0])
+
+        def to_dfa_state(nfa_state_set: set[State]) -> State:
+            """
+            Canonize a set of NFA states as a single DFA state.
+            """
+            if len(nfa_state_set) == 0:
+                return "{}"
+            else:
+                return f"{{{str(sorted(nfa_state_set))[1:-1]}}}"
+
+        # Set up the corresponding DFA's elements.
+        Q: set[State] = set()
+        Sigma: set[str] = self._input_alphabet.copy()
+        delta: dict[tuple[State, str], State] = {}
+        q0: State = to_dfa_state(nfa_q0)
+        F: set[State] = set()
+
+        # Perform the BFS.
+        while len(nfa_state_sets_to_explore) > 0:
+            # Create a canonical representation of this subset of NFA states to
+            # use as a DFA state, and if the subset contains an accept state of
+            # the NFA, also add it to the DFA's accept states.
+            nfa_state_set = nfa_state_sets_to_explore.popleft()
+            dfa_state = to_dfa_state(nfa_state_set)
+            Q.add(dfa_state)
+            if not self._accept_states.isdisjoint(nfa_state_set):
+                F.add(dfa_state)
+
+            # Let S be the subset of NFA states and x be any input symbol.
+            for input_sym in self._input_alphabet:
+                # Compute the epsilon closure of the union over all s in S of
+                # delta_NFA(s, x).
+                next_nfa_state_set: set[State] = set()
+                for nfa_state in nfa_state_set:
+                    next_nfa_state_set |= (
+                        self._transitions.get((nfa_state, input_sym)) or set()
+                    )
+                next_nfa_state_set = self.epsilon_closure(next_nfa_state_set)
+
+                # Create the corresponding DFA transition.
+                next_dfa_state = to_dfa_state(next_nfa_state_set)
+                delta[(dfa_state, input_sym)] = next_dfa_state
+
+                if next_dfa_state not in Q:
+                    nfa_state_sets_to_explore.append(next_nfa_state_set)
+
+        return _DFA(Q, Sigma, delta, q0, F)
 
     def as_dict(self) -> dict:
         """
