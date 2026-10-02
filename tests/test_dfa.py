@@ -23,17 +23,39 @@ class TestDFAInitValidate:
         }
         self.q0: State = "q_0"
         self.F: set[State] = {"q_0", "q_2"}
+        self.D = DFA(self.Q, self.Sigma, self.delta, self.q0, self.F)
 
     def test_good_init(self) -> None:
-        D = DFA(self.Q, self.Sigma, self.delta, self.q0, self.F)
-        assert (
-            D._automaton_type == "DFA"
-            and D._states == self.Q
-            and D._input_alphabet == self.Sigma
-            and D._transitions == self.delta
-            and D._start_state == self.q0
-            and D._accept_states == self.F
-        )
+        assert self.D._automaton_type == "DFA"
+        assert self.D._states == self.Q
+        assert self.D._input_alphabet == self.Sigma
+        assert self.D._transitions == self.delta
+        assert self.D._start_state == self.q0
+        assert self.D._accept_states == self.F
+
+    def test_copy_safety_states(self) -> None:
+        self.Q.pop()
+        assert self.D._states != self.Q
+
+    def test_copy_safety_input_alphabet(self) -> None:
+        self.Sigma.pop()
+        assert self.D._input_alphabet != self.Sigma
+
+    def test_copy_safety_transitions_keys(self) -> None:
+        del self.delta[("q_2", "b")]
+        assert self.D._transitions != self.delta
+
+    def test_copy_safety_transitions_values(self) -> None:
+        self.delta[("q_2", "b")] = "q_2"
+        assert self.D._transitions != self.delta
+
+    def test_copy_safety_start_state(self) -> None:
+        self.q0 = "q_1"
+        assert self.D._start_state != self.q0
+
+    def test_copy_safety_accept_states(self) -> None:
+        self.F.pop()
+        assert self.D._accept_states != self.F
 
     def test_bad_init_types(self) -> None:
         with pytest.raises(TypeCheckError):

@@ -59,10 +59,10 @@ class _Automaton(ABC):
         :param F: The automaton's accepting/final states.
         """
         self._automaton_type = automaton_type
-        self._states = Q
-        self._input_alphabet = Sigma
+        self._states = Q.copy()
+        self._input_alphabet = Sigma.copy()
         self._start_state = q0
-        self._accept_states = F
+        self._accept_states = F.copy()
 
     def validate(self) -> None:
         """

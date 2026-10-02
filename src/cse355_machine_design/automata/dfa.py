@@ -25,7 +25,7 @@ class _DFA(_Automaton):
         Create a new DFA and then validate it.
         """
         super().__init__("DFA", Q, Sigma, q0, F)
-        self._transitions = delta
+        self._transitions = {k: v for k, v in delta.items()}
         self.validate()
 
     def validate(self) -> None:

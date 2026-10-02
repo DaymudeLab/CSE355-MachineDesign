@@ -29,7 +29,7 @@ class _NFA(_Automaton):
         Create a new NFA and then validate it.
         """
         super().__init__("NFA", Q, Sigma, q0, F)
-        self._transitions = delta
+        self._transitions = {k: v.copy() for k, v in delta.items()}
         self._epsilon = epsilon
         self.validate()
 
