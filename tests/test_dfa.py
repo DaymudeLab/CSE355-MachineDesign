@@ -102,11 +102,9 @@ class TestDFAInitValidate:
             DFA(self.Q, self.Sigma, self.delta, self.q0, self.F)
 
         exc_str = str(excinfo.value)
-        assert (
-            "Invalid transition function:" in exc_str
-            and "For transition delta(q_invalid, a) = q_0," in exc_str
-            and "- 'q_invalid' is not in the state set" in exc_str
-        )
+        assert "Invalid transition function:" in exc_str
+        assert "For transition delta(q_invalid, a) = q_0," in exc_str
+        assert "- 'q_invalid' is not in the state set" in exc_str
 
     def test_bad_transition_input_symbol(self) -> None:
         self.delta[("q_0", "x")] = "q_1"
@@ -114,11 +112,9 @@ class TestDFAInitValidate:
             DFA(self.Q, self.Sigma, self.delta, self.q0, self.F)
 
         exc_str = str(excinfo.value)
-        assert (
-            "Invalid transition function:" in exc_str
-            and "For transition delta(q_0, x) = q_1," in exc_str
-            and "- 'x' is not in the input alphabet" in exc_str
-        )
+        assert "Invalid transition function:" in exc_str
+        assert "For transition delta(q_0, x) = q_1," in exc_str
+        assert "- 'x' is not in the input alphabet" in exc_str
 
     def test_bad_transition_to_state(self) -> None:
         self.delta[("q_0", "a")] = "q_invalid"
@@ -126,11 +122,9 @@ class TestDFAInitValidate:
             DFA(self.Q, self.Sigma, self.delta, self.q0, self.F)
 
         exc_str = str(excinfo.value)
-        assert (
-            "Invalid transition function:" in exc_str
-            and "For transition delta(q_0, a) = q_invalid," in exc_str
-            and "- 'q_invalid' is not in the state set" in exc_str
-        )
+        assert "Invalid transition function:" in exc_str
+        assert "For transition delta(q_0, a) = q_invalid," in exc_str
+        assert "- 'q_invalid' is not in the state set" in exc_str
 
     def test_missing_transition(self) -> None:
         del self.delta[("q_0", "a")]
@@ -138,10 +132,8 @@ class TestDFAInitValidate:
             DFA(self.Q, self.Sigma, self.delta, self.q0, self.F)
 
         exc_str = str(excinfo.value)
-        assert (
-            "Invalid transition function:" in exc_str
-            and "Missing transition delta(q_0, a)" in exc_str
-        )
+        assert "Invalid transition function:" in exc_str
+        assert "Missing transition delta(q_0, a)" in exc_str
 
 
 class TestDFAEmptyLanguage:

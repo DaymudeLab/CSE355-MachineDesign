@@ -80,6 +80,71 @@ class TestNFAInitValidate:
         with pytest.raises(TypeCheckError):
             NFA(self.Q, self.Sigma, self.delta, self.q0, self.F, None)  # type: ignore
 
+    def test_empty_states(self) -> None:
+        with pytest.raises(ValueError) as excinfo:
+            NFA(set(), self.Sigma, self.delta, self.q0, self.F)
+        assert "Empty state set." in str(excinfo.value)
+
+    def test_empty_input_alphabet(self) -> None:
+        with pytest.raises(ValueError) as excinfo:
+            NFA(self.Q, set(), self.delta, self.q0, self.F)
+        assert "Empty input alphabet." in str(excinfo.value)
+
+    def test_multichar_input_symbol(self) -> None:
+        with pytest.raises(ValueError) as excinfo:
+            NFA(self.Q, {"a", "bc"}, self.delta, self.q0, self.F)
+        assert "Invalid input alphabet symbol(s)." in str(excinfo.value)
+
+    def test_invalid_start_state(self) -> None:
+        with pytest.raises(ValueError) as excinfo:
+            NFA(self.Q, self.Sigma, self.delta, "q_invalid", self.F)
+        assert "Invalid start state." in str(excinfo.value)
+
+    def test_invalid_accept_states(self) -> None:
+        with pytest.raises(ValueError) as excinfo:
+            NFA(self.Q, self.Sigma, self.delta, self.q0, {"q_0", "q_invalid"})
+        assert "Invalid accept state(s)." in str(excinfo.value)
+
+    def test_multichar_epsilon_symbol(self) -> None:
+        with pytest.raises(ValueError) as excinfo:
+            NFA(self.Q, self.Sigma, self.delta, self.q0, self.F, epsilon="eps")
+        assert "Invalid epsilon symbol." in str(excinfo.value)
+
+    def test_invalid_epsilon_symbol(self) -> None:
+        with pytest.raises(ValueError) as excinfo:
+            NFA(self.Q, self.Sigma, self.delta, self.q0, self.F, epsilon="a")
+        assert "Invalid epsilon symbol." in str(excinfo.value)
+
+    def test_bad_transition_from_state(self) -> None:
+        self.delta[("q_invalid", "a")] = {"q_0"}
+        with pytest.raises(ValueError) as excinfo:
+            NFA(self.Q, self.Sigma, self.delta, self.q0, self.F)
+
+        exc_str = str(excinfo.value)
+        assert "Invalid transition function:" in exc_str
+        assert "For transition delta(q_invalid, a) = {'q_0'}," in exc_str
+        assert "- 'q_invalid' is not in the state set" in exc_str
+
+    def test_bad_transition_input_symbol(self) -> None:
+        self.delta[("q_0", "x")] = {"q_1"}
+        with pytest.raises(ValueError) as excinfo:
+            NFA(self.Q, self.Sigma, self.delta, self.q0, self.F)
+
+        exc_str = str(excinfo.value)
+        assert "Invalid transition function:" in exc_str
+        assert "For transition delta(q_0, x) = {'q_1'}," in exc_str
+        assert "- 'x' is not in the input alphabet" in exc_str
+
+    def test_bad_transition_to_states(self) -> None:
+        self.delta[("q_0", "a")] = {"q_invalid"}
+        with pytest.raises(ValueError) as excinfo:
+            NFA(self.Q, self.Sigma, self.delta, self.q0, self.F)
+
+        exc_str = str(excinfo.value)
+        assert "Invalid transition function:" in exc_str
+        assert "For transition delta(q_0, a) = {'q_invalid'}," in exc_str
+        assert "- {'q_invalid'} are not in the state set" in exc_str
+
 
 class TestNFAToDFAConversion:
     """
