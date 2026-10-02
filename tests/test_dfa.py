@@ -1,4 +1,4 @@
-from cse355_machine_design.automata import AutomataComparison, DFA, NFA, State
+from cse355_machine_design.automata import DFA, NFA, State
 
 import pytest
 from typeguard import TypeCheckError
