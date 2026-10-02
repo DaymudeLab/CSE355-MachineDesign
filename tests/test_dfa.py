@@ -642,26 +642,26 @@ class TestDFAComparison:
     def test_mismatched_alphabets(self) -> None:
         self.D_2._input_alphabet = {"0", "1"}
         with pytest.raises(ValueError) as excinfo:
-            self.D_1.union(self.D_2)
+            self.D_1.compare(self.D_2)
         assert "Mismatched input alphabets." in str(excinfo.value)
 
     def test_disjoint(self) -> None:
-        assert self.D_1.compare(self.D_3) == AutomataComparison.DISJOINT
+        assert self.D_1.is_disjoint(self.D_3)
 
     def test_partial_intersection(self) -> None:
-        assert self.D_2.compare(self.D_3) == AutomataComparison.PARTIAL
+        assert self.D_2.partially_intersects(self.D_3)
 
     def test_subset_1(self) -> None:
-        assert self.D_1.compare(self.D_2) == AutomataComparison.SUBSET
+        assert self.D_1 < self.D_2 and self.D_1 <= self.D_2 and self.D_1 != self.D_2
 
     def test_superset_1(self) -> None:
-        assert self.D_2.compare(self.D_1) == AutomataComparison.SUPERSET
+        assert self.D_2 > self.D_1 and self.D_2 >= self.D_1 and self.D_2 != self.D_1
 
     def test_subset_2(self) -> None:
-        assert self.D_3.compare(self.D_4) == AutomataComparison.SUBSET
+        assert self.D_3 < self.D_4 and self.D_3 <= self.D_4 and self.D_3 != self.D_4
 
     def test_superset_2(self) -> None:
-        assert self.D_4.compare(self.D_3) == AutomataComparison.SUPERSET
+        assert self.D_4 > self.D_3 and self.D_4 >= self.D_3 and self.D_4 != self.D_3
 
     def test_equality(self) -> None:
-        assert self.D_4.compare(self.D_5) == AutomataComparison.EQUAL
+        assert self.D_4 == self.D_5 and self.D_4 <= self.D_5 and self.D_5 >= self.D_4

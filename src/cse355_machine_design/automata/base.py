@@ -126,6 +126,81 @@ class _Automaton(ABC):
         """
         raise NotImplementedError("Abstract method not callable")
 
+    def is_disjoint(self, other: "_Automaton") -> bool:
+        """
+        Return True iff this and the other DFA's languages are disjoint.
+        """
+        return self.compare(other) == AutomataComparison.DISJOINT
+
+    def partially_intersects(self, other: "_Automaton") -> bool:
+        """
+        Return True iff this and the other automaton's languages intersect but
+        neither contains the other.
+        """
+        return self.compare(other) == AutomataComparison.PARTIAL
+
+    def is_proper_subset(self, other: "_Automaton") -> bool:
+        """
+        Return True iff every string in this DFA's language is contained in the
+        other DFA's language but the languages are not equal.
+        """
+        return self.compare(other) == AutomataComparison.SUBSET
+
+    def __lt__(self, other: "_Automaton") -> bool:
+        """
+        Operator override for subset DFA1 < DFA2; see is_proper_subset().
+        """
+        return self.is_proper_subset(other)
+
+    def __le__(self, other: "_Automaton") -> bool:
+        """
+        Operator override for subset-or-equal DFA1 <= DFA2.
+        """
+        return self.compare(other) in [
+            AutomataComparison.SUBSET,
+            AutomataComparison.EQUAL,
+        ]
+
+    def is_proper_superset(self, other: "_Automaton") -> bool:
+        """
+        Return True iff this DFA's language contains every string in the other
+        DFA's language but the languages are not equal.
+        """
+        return self.compare(other) == AutomataComparison.SUPERSET
+
+    def __gt__(self, other: "_Automaton") -> bool:
+        """
+        Operator override for superset DFA1 > DFA2; see is_proper_superset().
+        """
+        return self.is_proper_superset(other)
+
+    def __ge__(self, other: "_Automaton") -> bool:
+        """
+        Operator override for superset-or-equal DFA1 >= DFA2.
+        """
+        return self.compare(other) in [
+            AutomataComparison.SUPERSET,
+            AutomataComparison.EQUAL,
+        ]
+
+    def equals(self, other: "_Automaton") -> bool:
+        """
+        Return True iff this and the other DFA's languages are equal.
+        """
+        return self.compare(other) == AutomataComparison.EQUAL
+
+    def __eq__(self, other: "_Automaton") -> bool:  # type: ignore
+        """
+        Operator override for equality DFA1 == DFA2; see equals().
+        """
+        return self.equals(other)
+
+    def __ne__(self, other: "_Automaton") -> bool:  # type: ignore
+        """
+        Operator override for non-equality DFA1 != DFA2; see equals().
+        """
+        return not self.equals(other)
+
     def submit_as_answer(self, problem_number: int) -> None:
         """
         Submit this automaton to the registry as the answer to a given problem.
