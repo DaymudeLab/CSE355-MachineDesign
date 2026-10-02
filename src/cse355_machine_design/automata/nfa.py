@@ -157,12 +157,24 @@ class _NFA(_Automaton):
 
     def compare(self, other: "_Automaton") -> AutomataComparison:
         """
-        Compare this and the other NFA's languages.
+        Compare this and the other finite automaton's languages by converting
+        both into DFAs and then using DFA.compare().
 
-        :param other: The other NFA to compare against.
+        :param other: The other DFA or NFA to compare against.
         :return: An AutomataComparison capturing the languages' relationship.
         """
-        raise NotImplementedError("Not implemented yet!")
+        # Validate the other automaton's type.
+        if not isinstance(other, _DFA | _NFA):
+            raise TypeError(
+                "Invalid comparison type. Cannot directly compare languages of"
+                + f" a NFA and a {type(other)}."
+            )
+
+        # Perform the necessary conversions and then compare languages.
+        if isinstance(other, _DFA):
+            return self.as_dfa().compare(other)
+        else:
+            return self.as_dfa().compare(other.as_dfa())
 
     def as_dfa(self) -> _DFA:
         """
@@ -170,7 +182,7 @@ class _NFA(_Automaton):
         of the powerset construction. Note that unreachable states are omitted
         automatically by this method.
 
-        :return: a DFA equivalent to this NFA.
+        :return: A DFA equivalent to this NFA.
         """
         # Initialize the BFS through the NFA's powerset representation with the
         # epsilon closure of the NFA's start state.
