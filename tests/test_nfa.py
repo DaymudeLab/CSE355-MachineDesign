@@ -1,4 +1,4 @@
-from cse355_machine_design.automata import NFA, PDA, State
+from cse355_machine_design import NFA, PDA, State
 
 from itertools import chain, product
 

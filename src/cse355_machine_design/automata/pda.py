@@ -4,6 +4,7 @@ from cse355_machine_design.automata.cfg import _CFG
 from collections import defaultdict, deque
 from itertools import product
 import math
+from typing import Any
 
 
 class _PDA(_Automaton):
@@ -302,21 +303,62 @@ class _PDA(_Automaton):
         """
         raise NotImplementedError("Not implemented yet!")
 
-    def as_dict(self) -> dict:
+    def register(self, id: int) -> None:
+        """
+        Add this PDA to the registry with the given identifier. Overwrites any
+        existing PDA with the same identifier.
+
+        :param id: An int identifier for this PDA in the registry.
+        """
+        # Deferred import to avoid circular dependency.
+        from cse355_machine_design.registry import automata_registry
+        automata_registry.add(self, id)
+
+    def as_dict(self) -> dict[str, Any]:
         """
         Get a dict representation of this PDA.
 
         :return: A dict representation of this PDA.
         """
         dict_rep = super().as_dict()
-        dict_rep["stack_alphabet"] = self._stack_alphabet
+        dict_rep["stack_alphabet"] = self._stack_alphabet.copy()
         dict_rep["transitions"] = [
-            {"from": q, "input": a, "pop": b, "to": s}
-            for (q, a, b), s in self._transitions.items()
+            {
+                "from_state": from_state,
+                "input_sym": input_sym,
+                "pop_sym": pop_sym,
+                "to_states_push_syms": to_states_push_syms.copy(),
+            }
+            for (
+                from_state,
+                input_sym,
+                pop_sym,
+            ), to_states_push_syms in self._transitions.items()
         ]
         dict_rep["epsilon"] = self._epsilon
 
         return dict_rep
+
+    def from_dict(dict_rep: dict[str, Any]) -> "_PDA":
+        """
+        Construct a new NFA from the given dictionary.
+
+        :param dict_rep: A dict containing NFA information; see as_dict().
+        """
+        Q: set[State] = set(dict_rep["states"])
+        Sigma: set[str] = set(dict_rep["input_alphabet"])
+        Gamma: set[str] = set(dict_rep["stack_alphabet"])
+        delta: dict[tuple[State, str, str], set[tuple[State, str]]] = {
+            (t["from_state"], t["input_sym"], t["pop_sym"]): set(
+                map(tuple, t["to_states_push_syms"])
+            )
+            for t in dict_rep["transitions"]
+        }
+        q0: State = dict_rep["start_state"]
+        F: set[State] = set(dict_rep["accept_states"])
+        epsilon: str = dict_rep["epsilon"]
+
+        return _PDA(Q, Sigma, Gamma, delta, q0, F, epsilon)
 
     def _as_dot_string(self) -> str:
         """

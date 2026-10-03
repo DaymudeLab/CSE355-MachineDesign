@@ -2,6 +2,7 @@ from cse355_machine_design.automata.base import _Automaton, AutomataComparison, 
 
 from collections import defaultdict, deque
 from itertools import product
+from typing import Any
 
 
 class _DFA(_Automaton):
@@ -395,7 +396,18 @@ class _DFA(_Automaton):
         else:
             return AutomataComparison.EQUAL
 
-    def as_dict(self) -> dict:
+    def register(self, id: int) -> None:
+        """
+        Add this DFA to the registry with the given identifier. Overwrites any
+        existing DFA with the same identifier.
+
+        :param id: An int identifier for this DFA in the registry.
+        """
+        # Deferred import to avoid circular dependency.
+        from cse355_machine_design.registry import automata_registry
+        automata_registry.add(self, id)
+
+    def as_dict(self) -> dict[str, Any]:
         """
         Get a dict representation of this DFA.
 
@@ -403,10 +415,28 @@ class _DFA(_Automaton):
         """
         dict_rep = super().as_dict()
         dict_rep["transitions"] = [
-            {"from": q, "input": x, "to": r} for (q, x), r in self._transitions.items()
+            {"from_state": from_state, "input_sym": input_sym, "to_state": to_state}
+            for (from_state, input_sym), to_state in self._transitions.items()
         ]
 
         return dict_rep
+
+    def from_dict(dict_rep: dict[str, Any]) -> "_DFA":
+        """
+        Construct a new DFA from the given dictionary.
+
+        :param dict_rep: A dict containing DFA information; see as_dict().
+        """
+        Q: set[State] = set(dict_rep["states"])
+        Sigma: set[str] = set(dict_rep["input_alphabet"])
+        delta: dict[tuple[State, str], State] = {
+            (t["from_state"], t["input_sym"]): t["to_state"]
+            for t in dict_rep["transitions"]
+        }
+        q0: State = dict_rep["start_state"]
+        F: set[State] = set(dict_rep["accept_states"])
+
+        return _DFA(Q, Sigma, delta, q0, F)
 
     def _as_dot_string(self) -> str:
         """

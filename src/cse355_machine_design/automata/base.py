@@ -1,8 +1,7 @@
-from cse355_machine_design import registry
-
 from abc import ABC, abstractmethod
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
 import render_html
 
@@ -215,16 +214,17 @@ class _Automaton(ABC):
         """
         return not self.equals(other)
 
-    def submit_as_answer(self, problem_number: int) -> None:
+    @abstractmethod
+    def register(self, id: int) -> None:
         """
-        Submit this automaton to the registry as the answer to a given problem.
-        Overwrites any previously submitted automaton for the same problem.
+        Add this automaton to the registry with the given identifier.
+        Overwrites any existing automaton with the same type and identifier.
 
-        :param problem_number: The problem to submit this as an answer for.
+        :param id: An int identifier for this automaton in the registry.
         """
-        registry.add_to_registry(self._automaton_type, problem_number, self)
+        raise NotImplementedError("Abstract method not callable")
 
-    def as_dict(self) -> dict:
+    def as_dict(self) -> dict[str, Any]:
         """
         Get a dict representation of this automaton.
 
@@ -232,11 +232,20 @@ class _Automaton(ABC):
         """
         return {
             "type": self._automaton_type,
-            "states": self._states,
-            "input_alphabet": self._input_alphabet,
+            "states": self._states.copy(),
+            "input_alphabet": self._input_alphabet.copy(),
             "start_state": self._start_state,
-            "accept_states": self._accept_states,
+            "accept_states": self._accept_states.copy(),
         }
+
+    @abstractmethod
+    def from_dict(dict_rep: dict[str, Any]) -> "_Automaton":
+        """
+        Construct a new base Automaton from the given dictionary.
+
+        :param dict_rep: A dict containing automaton information.
+        """
+        raise NotImplementedError("Abstract method not callable")
 
     @abstractmethod
     def _as_dot_string(self) -> str:

@@ -2,6 +2,7 @@ from cse355_machine_design.automata.base import _Automaton, AutomataComparison, 
 from cse355_machine_design.automata.dfa import _DFA
 
 from collections import defaultdict, deque
+from typing import Any
 
 
 class _NFA(_Automaton):
@@ -257,7 +258,18 @@ class _NFA(_Automaton):
 
         return _DFA(Q, Sigma, delta, q0, F)
 
-    def as_dict(self) -> dict:
+    def register(self, id: int) -> None:
+        """
+        Add this NFA to the registry with the given identifier. Overwrites any
+        existing NFA with the same identifier.
+
+        :param id: An int identifier for this NFA in the registry.
+        """
+        # Deferred import to avoid circular dependency.
+        from cse355_machine_design.registry import automata_registry
+        automata_registry.add(self, id)
+
+    def as_dict(self) -> dict[str, Any]:
         """
         Get a dict representation of this NFA.
 
@@ -265,11 +277,34 @@ class _NFA(_Automaton):
         """
         dict_rep = super().as_dict()
         dict_rep["transitions"] = [
-            {"from": q, "input": x, "to": s} for (q, x), s in self._transitions.items()
+            {
+                "from_state": from_state,
+                "input_sym": input_sym,
+                "to_states": to_states.copy(),
+            }
+            for (from_state, input_sym), to_states in self._transitions.items()
         ]
         dict_rep["epsilon"] = self._epsilon
 
         return dict_rep
+
+    def from_dict(dict_rep: dict[str, Any]) -> "_NFA":
+        """
+        Construct a new NFA from the given dictionary.
+
+        :param dict_rep: A dict containing NFA information; see as_dict().
+        """
+        Q: set[State] = set(dict_rep["states"])
+        Sigma: set[str] = set(dict_rep["input_alphabet"])
+        delta: dict[tuple[State, str], set[State]] = {
+            (t["from_state"], t["input_sym"]): set(t["to_states"])
+            for t in dict_rep["transitions"]
+        }
+        q0: State = dict_rep["start_state"]
+        F: set[State] = set(dict_rep["accept_states"])
+        epsilon: str = dict_rep["epsilon"]
+
+        return _NFA(Q, Sigma, delta, q0, F, epsilon)
 
     def _as_dot_string(self) -> str:
         """
