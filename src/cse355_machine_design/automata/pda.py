@@ -1,5 +1,5 @@
 from cse355_machine_design.automata.base import _Automaton, AutomataComparison, State
-from cse355_machine_design.automata.cfg import _CFG
+from cse355_machine_design.grammars.cfg import _CFG
 
 from collections import defaultdict, deque
 from itertools import product

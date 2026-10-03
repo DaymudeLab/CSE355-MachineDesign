@@ -7,5 +7,6 @@ config.collection_check_strategy = CollectionCheckStrategy.ALL_ITEMS
 install_import_hook("cse355_machine_design")
 
 # Import public-facing package contents.
-from .automata import DFA, NFA, PDA, CFG, BBTM, State, AutomataComparison
+from .automata import DFA, NFA, PDA, BBTM, State, AutomataComparison
+from .grammars import CFG
 from .registry import automata_registry, AutomataRegistry
