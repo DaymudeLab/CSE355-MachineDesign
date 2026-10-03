@@ -2,6 +2,9 @@
 name = "cse355-machine-design"
 version = "0.3.0"
 dependencies = [
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.3",
+    "pandas>=3.0.6",
     "render-html>=1.0.1",
     "typeguard>=4.6.0",
 ]

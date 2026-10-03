@@ -10,3 +10,4 @@ install_import_hook("cse355_machine_design")
 from .automata import DFA, NFA, PDA, State, AutomataComparison
 from .grammars import CFG
 from .registry import automata_registry, AutomataRegistry
+from .turing_machines import BBTM
