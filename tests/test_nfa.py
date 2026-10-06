@@ -1,6 +1,7 @@
 from cse355_machine_design import NFA, PDA, State
 
 from itertools import chain, product
+from typing import Any
 
 import pytest
 from typeguard import TypeCheckError
@@ -448,3 +449,45 @@ class TestNFAToDFAConversion:
             "{'q_1', 'q_2'}",
             "{'q_0', 'q_1', 'q_2'}",
         }
+
+
+class TestNFAToFromDict:
+    """
+    Test NFA dictionary representation creation and parsing.
+    """
+
+    @pytest.fixture(autouse=True)
+    def dict_substring_aa_aba(self) -> None:
+        self.dict_rep: dict[str, Any] = {
+            "type": "NFA",
+            "states": {"q_0", "q_1", "q_2", "q_3"},
+            "input_alphabet": {"a", "b"},
+            "transitions": [
+                {"from_state": "q_0", "input_sym": "a", "to_states": {"q_0", "q_1"}},
+                {"from_state": "q_0", "input_sym": "b", "to_states": {"q_0"}},
+                {"from_state": "q_1", "input_sym": "b", "to_states": {"q_2"}},
+                {"from_state": "q_1", "input_sym": "_", "to_states": {"q_2"}},
+                {"from_state": "q_2", "input_sym": "a", "to_states": {"q_3"}},
+                {"from_state": "q_3", "input_sym": "a", "to_states": {"q_3"}},
+                {"from_state": "q_3", "input_sym": "b", "to_states": {"q_3"}},
+            ],
+            "start_state": "q_0",
+            "accept_states": {"q_3"},
+            "epsilon": "_",
+        }
+
+    def test_nfa_to_dict(self, nfa_substring_aa_aba) -> None:
+        assert nfa_substring_aa_aba.as_dict() == self.dict_rep
+
+    def test_dfa_from_dict(self, nfa_substring_aa_aba) -> None:
+        N = NFA.from_dict(self.dict_rep)
+
+        assert N._states == nfa_substring_aa_aba._states
+        assert N._input_alphabet == nfa_substring_aa_aba._input_alphabet
+        assert all(
+            k in nfa_substring_aa_aba._transitions
+            and v == nfa_substring_aa_aba._transitions[k]
+            for (k, v) in N._transitions.items()
+        )
+        assert N._start_state == nfa_substring_aa_aba._start_state
+        assert N._accept_states == nfa_substring_aa_aba._accept_states

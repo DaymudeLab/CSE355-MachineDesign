@@ -1,6 +1,7 @@
 from cse355_machine_design import DFA, NFA, State
 
 from itertools import chain, product
+from typing import Any
 
 import pytest
 from typeguard import TypeCheckError
@@ -744,3 +745,45 @@ class TestDFAComparison:
         assert dfa_even_number_a == dfa_even_number_a_alt
         assert dfa_even_number_a >= dfa_even_number_a_alt
         assert dfa_even_number_a <= dfa_even_number_a_alt
+
+
+class TestDFAToFromDict:
+    """
+    Test DFA dictionary representation creation and parsing.
+    """
+
+    @pytest.fixture(autouse=True)
+    def dict_exactly_two_a(self) -> None:
+        self.dict_rep: dict[str, Any] = {
+            "type": "DFA",
+            "states": {"q_0", "q_1", "q_2", "q_3"},
+            "input_alphabet": {"a", "b"},
+            "transitions": [
+                {"from_state": "q_0", "input_sym": "a", "to_state": "q_1"},
+                {"from_state": "q_0", "input_sym": "b", "to_state": "q_0"},
+                {"from_state": "q_1", "input_sym": "a", "to_state": "q_2"},
+                {"from_state": "q_1", "input_sym": "b", "to_state": "q_1"},
+                {"from_state": "q_2", "input_sym": "a", "to_state": "q_3"},
+                {"from_state": "q_2", "input_sym": "b", "to_state": "q_2"},
+                {"from_state": "q_3", "input_sym": "a", "to_state": "q_3"},
+                {"from_state": "q_3", "input_sym": "b", "to_state": "q_3"},
+            ],
+            "start_state": "q_0",
+            "accept_states": {"q_2"},
+        }
+
+    def test_dfa_to_dict(self, dfa_exactly_two_a) -> None:
+        assert dfa_exactly_two_a.as_dict() == self.dict_rep
+
+    def test_dfa_from_dict(self, dfa_exactly_two_a) -> None:
+        D = DFA.from_dict(self.dict_rep)
+
+        assert D._states == dfa_exactly_two_a._states
+        assert D._input_alphabet == dfa_exactly_two_a._input_alphabet
+        assert all(
+            k in dfa_exactly_two_a._transitions
+            and v == dfa_exactly_two_a._transitions[k]
+            for (k, v) in D._transitions.items()
+        )
+        assert D._start_state == dfa_exactly_two_a._start_state
+        assert D._accept_states == dfa_exactly_two_a._accept_states
