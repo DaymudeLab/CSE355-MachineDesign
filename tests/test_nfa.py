@@ -6,6 +6,108 @@ import pytest
 from typeguard import TypeCheckError
 
 
+@pytest.fixture
+def nfa_only_eps_a() -> NFA:
+    """
+    An NFA recognizing {"", "a"}.
+    """
+    Q: set[State] = {"q_0", "q_1"}
+    Sigma: set[str] = {"a", "b"}
+    delta: dict[tuple[State, str], set[State]] = {
+        ("q_0", "a"): {"q_1"},
+    }
+    q0: State = "q_0"
+    F: set[State] = {"q_0", "q_1"}
+
+    return NFA(Q, Sigma, delta, q0, F)
+
+
+@pytest.fixture
+def nfa_ends_with_aa() -> NFA:
+    """
+    An NFA recognizing {w in {a,b}* | w ends with "aa"}.
+    """
+    Q: set[State] = {"q_0", "q_1", "q_2"}
+    Sigma: set[str] = {"a", "b"}
+    delta: dict[tuple[State, str], set[State]] = {
+        ("q_0", "a"): {"q_0", "q_1"},
+        ("q_0", "b"): {"q_0"},
+        ("q_1", "a"): {"q_2"},
+    }
+    q0: State = "q_0"
+    F: set[State] = {"q_2"}
+
+    return NFA(Q, Sigma, delta, q0, F)
+
+
+@pytest.fixture
+def nfa_substring_aa_aba() -> NFA:
+    """
+    An NFA recognizing {w in {a,b}* | "aa" or "aba" is a substring of w}.
+    """
+    Q: set[State] = {"q_0", "q_1", "q_2", "q_3"}
+    Sigma: set[str] = {"a", "b"}
+    delta: dict[tuple[State, str], set[State]] = {
+        ("q_0", "a"): {"q_0", "q_1"},
+        ("q_0", "b"): {"q_0"},
+        ("q_1", "b"): {"q_2"},
+        ("q_1", "_"): {"q_2"},
+        ("q_2", "a"): {"q_3"},
+        ("q_3", "a"): {"q_3"},
+        ("q_3", "b"): {"q_3"},
+    }
+    q0: State = "q_0"
+    F: set[State] = {"q_3"}
+
+    return NFA(Q, Sigma, delta, q0, F)
+
+
+@pytest.fixture
+def nfa_one_or_even_b() -> NFA:
+    """
+    An NFA recognizing {w in {a,b}* | w contains one or an even number of b's}.
+    """
+    Q: set[State] = {"q_0", "q_1", "q_2", "q_3"}
+    Sigma: set[str] = {"a", "b"}
+    delta: dict[tuple[State, str], set[State]] = {
+        ("q_0", "a"): {"q_0"},
+        ("q_0", "b"): {"q_1"},
+        ("q_1", "a"): {"q_1"},
+        ("q_1", "b"): {"q_2"},
+        ("q_2", "a"): {"q_2"},
+        ("q_2", "b"): {"q_3"},
+        ("q_3", "a"): {"q_3"},
+        ("q_3", "b"): {"q_2"},
+    }
+    q0: State = "q_0"
+    F: set[State] = {"q_0", "q_1", "q_2"}
+
+    return NFA(Q, Sigma, delta, q0, F)
+
+
+@pytest.fixture
+def nfa_one_or_even_b_alt() -> NFA:
+    """
+    An NFA recognizing {w in {a,b}* | w contains one or an even number of b's}.
+    """
+    Q: set[State] = {"q_0", "q_1", "q_2", "q_3", "q_4"}
+    Sigma: set[str] = {"a", "b"}
+    delta: dict[tuple[State, str], set[State]] = {
+        ("q_0", "_"): {"q_1", "q_3"},
+        ("q_1", "a"): {"q_1"},
+        ("q_1", "b"): {"q_2"},
+        ("q_2", "a"): {"q_2"},
+        ("q_3", "a"): {"q_3"},
+        ("q_3", "b"): {"q_4"},
+        ("q_4", "a"): {"q_4"},
+        ("q_4", "b"): {"q_3"},
+    }
+    q0: State = "q_0"
+    F: set[State] = {"q_2", "q_3"}
+
+    return NFA(Q, Sigma, delta, q0, F)
+
+
 class TestNFAInitValidate:
     """
     Test NFA initialization and validation.
@@ -153,10 +255,9 @@ class TestNFAEvaluate:
     Test NFA string evaluation.
     """
 
-    def test_bad_input_str(self) -> None:
-        N = NFA({"q_0"}, {"0"}, {("q_0", "0"): {"q_0"}}, "q_0", {"q_0"})
+    def test_bad_input_str(self, nfa_only_eps_a) -> None:
         with pytest.raises(ValueError) as excinfo:
-            N.evaluate("011")
+            nfa_only_eps_a.evaluate("011")
         assert "Invalid input string." in str(excinfo.value)
 
 
@@ -165,103 +266,38 @@ class TestNFAGenerateStrings:
     Test NFA string generation.
     """
 
-    def test_generate_strs_1(self) -> None:
-        # Recognizes {"", "a"}.
-        Q: set[State] = {"q_0", "q_1"}
-        Sigma: set[str] = {"a", "b"}
-        delta: dict[tuple[State, str], set[State]] = {
-            ("q_0", "a"): {"q_1"},
-        }
-        q0: State = "q_0"
-        F: set[State] = {"q_0", "q_1"}
+    def test_generate_strs_1(self, nfa_only_eps_a) -> None:
+        assert nfa_only_eps_a.generate_strings(max_str_len=4) == {"", "a"}
 
-        N = NFA(Q, Sigma, delta, q0, F)
-        assert N.generate_strings(max_str_len=4) == {"", "a"}
-
-    def test_generate_strs_2(self) -> None:
-        # Recognizes {w in {a, b}* | w ends with aa}.
-        Q: set[State] = {"q_0", "q_1", "q_2"}
-        Sigma: set[str] = {"a", "b"}
-        delta: dict[tuple[State, str], set[State]] = {
-            ("q_0", "a"): {"q_0", "q_1"},
-            ("q_0", "b"): {"q_0"},
-            ("q_1", "a"): {"q_2"},
-        }
-        q0: State = "q_0"
-        F: set[State] = {"q_2"}
-
-        N = NFA(Q, Sigma, delta, q0, F)
-        assert N.generate_strings(max_str_len=4) == {
+    def test_generate_strs_2(self, nfa_ends_with_aa) -> None:
+        assert nfa_ends_with_aa.generate_strings(max_str_len=4) == {
             "".join(p)
-            for p in chain.from_iterable(product(Sigma, repeat=r) for r in range(5))
+            for p in chain.from_iterable(
+                product(["a", "b"], repeat=r) for r in range(5)
+            )
             if len("".join(p)) >= 2 and "".join(p)[-2:] == "aa"
         }
 
-    def test_generate_strs_3(self) -> None:
-        # Recognizes {w in {a, b}* | w contains aa or aba as a substring}.
-        Q: set[State] = {"q_0", "q_1", "q_2", "q_3"}
-        Sigma: set[str] = {"a", "b"}
-        delta: dict[tuple[State, str], set[State]] = {
-            ("q_0", "a"): {"q_0", "q_1"},
-            ("q_0", "b"): {"q_0"},
-            ("q_1", "b"): {"q_2"},
-            ("q_1", "_"): {"q_2"},
-            ("q_2", "a"): {"q_3"},
-            ("q_3", "a"): {"q_3"},
-            ("q_3", "b"): {"q_3"},
-        }
-        q0: State = "q_0"
-        F: set[State] = {"q_3"}
-
-        N = NFA(Q, Sigma, delta, q0, F)
-        assert N.generate_strings(max_str_len=4) == {
+    def test_generate_strs_3(self, nfa_substring_aa_aba) -> None:
+        assert nfa_substring_aa_aba.generate_strings(max_str_len=4) == {
             "".join(p)
-            for p in chain.from_iterable(product(Sigma, repeat=r) for r in range(5))
+            for p in chain.from_iterable(
+                product(["a", "b"], repeat=r) for r in range(5)
+            )
             if "aa" in "".join(p) or "aba" in "".join(p)
         }
 
-    def test_generate_strs_4(self) -> None:
-        # Recognizes {w in {a, b}* | w has one or an even number of b's}.
-        Q: set[State] = {"q_0", "q_1", "q_2", "q_3"}
-        Sigma: set[str] = {"a", "b"}
-        delta: dict[tuple[State, str], set[State]] = {
-            ("q_0", "a"): {"q_0"},
-            ("q_0", "b"): {"q_1"},
-            ("q_1", "a"): {"q_1"},
-            ("q_1", "b"): {"q_2"},
-            ("q_2", "a"): {"q_2"},
-            ("q_2", "b"): {"q_3"},
-            ("q_3", "a"): {"q_3"},
-            ("q_3", "b"): {"q_2"},
-        }
-        q0: State = "q_0"
-        F: set[State] = {"q_0", "q_1", "q_2"}
-
-        N = NFA(Q, Sigma, delta, q0, F)
-        assert N.generate_strings(max_str_len=4) == {
+    def test_generate_strs_4(self, nfa_one_or_even_b) -> None:
+        assert nfa_one_or_even_b.generate_strings(max_str_len=4) == {
             "".join(p)
-            for p in chain.from_iterable(product(Sigma, repeat=r) for r in range(5))
+            for p in chain.from_iterable(
+                product(["a", "b"], repeat=r) for r in range(5)
+            )
             if "".join(p).count("b") == 1 or "".join(p).count("b") % 2 == 0
         }
 
-    def test_generate_strs_with_limit(self) -> None:
-        # Recognizes {w in {a, b}* | w contains aa or aba as a substring}.
-        Q: set[State] = {"q_0", "q_1", "q_2", "q_3"}
-        Sigma: set[str] = {"a", "b"}
-        delta: dict[tuple[State, str], set[State]] = {
-            ("q_0", "a"): {"q_0", "q_1"},
-            ("q_0", "b"): {"q_0"},
-            ("q_1", "b"): {"q_2"},
-            ("q_1", "_"): {"q_2"},
-            ("q_2", "a"): {"q_3"},
-            ("q_3", "a"): {"q_3"},
-            ("q_3", "b"): {"q_3"},
-        }
-        q0: State = "q_0"
-        F: set[State] = {"q_3"}
-
-        N = NFA(Q, Sigma, delta, q0, F)
-        assert N.generate_strings(max_str_len=4, max_strs=5) == {
+    def test_generate_strs_with_limit(self, nfa_substring_aa_aba) -> None:
+        assert nfa_substring_aa_aba.generate_strings(max_str_len=4, max_strs=5) == {
             "aa",
             "aaa",
             "aab",
@@ -275,81 +311,7 @@ class TestNFAComparison:
     Test NFA language comparisons.
     """
 
-    @pytest.fixture(autouse=True)
-    def setup_nfas(self) -> None:
-        # Recognizes {"", "a"}.
-        Q: set[State] = {"q_0", "q_1"}
-        Sigma: set[str] = {"a", "b"}
-        delta: dict[tuple[State, str], set[State]] = {
-            ("q_0", "a"): {"q_1"},
-        }
-        q0: State = "q_0"
-        F: set[State] = {"q_0", "q_1"}
-        self.N_1 = NFA(Q, Sigma, delta, q0, F)
-
-        # Recognizes {w in {a, b}* | w ends with aa}.
-        Q: set[State] = {"q_0", "q_1", "q_2"}
-        Sigma: set[str] = {"a", "b"}
-        delta: dict[tuple[State, str], set[State]] = {
-            ("q_0", "a"): {"q_0", "q_1"},
-            ("q_0", "b"): {"q_0"},
-            ("q_1", "a"): {"q_2"},
-        }
-        q0: State = "q_0"
-        F: set[State] = {"q_2"}
-        self.N_2 = NFA(Q, Sigma, delta, q0, F)
-
-        # Recognizes {w in {a, b}* | w contains aa or aba as a substring}.
-        Q: set[State] = {"q_0", "q_1", "q_2", "q_3"}
-        Sigma: set[str] = {"a", "b"}
-        delta: dict[tuple[State, str], set[State]] = {
-            ("q_0", "a"): {"q_0", "q_1"},
-            ("q_0", "b"): {"q_0"},
-            ("q_1", "b"): {"q_2"},
-            ("q_1", "_"): {"q_2"},
-            ("q_2", "a"): {"q_3"},
-            ("q_3", "a"): {"q_3"},
-            ("q_3", "b"): {"q_3"},
-        }
-        q0: State = "q_0"
-        F: set[State] = {"q_3"}
-        self.N_3 = NFA(Q, Sigma, delta, q0, F)
-
-        # Recognizes {w in {a, b}* | w has one or an even number of b's}.
-        Q: set[State] = {"q_0", "q_1", "q_2", "q_3"}
-        Sigma: set[str] = {"a", "b"}
-        delta: dict[tuple[State, str], set[State]] = {
-            ("q_0", "a"): {"q_0"},
-            ("q_0", "b"): {"q_1"},
-            ("q_1", "a"): {"q_1"},
-            ("q_1", "b"): {"q_2"},
-            ("q_2", "a"): {"q_2"},
-            ("q_2", "b"): {"q_3"},
-            ("q_3", "a"): {"q_3"},
-            ("q_3", "b"): {"q_2"},
-        }
-        q0: State = "q_0"
-        F: set[State] = {"q_0", "q_1", "q_2"}
-        self.N_4 = NFA(Q, Sigma, delta, q0, F)
-
-        # Also recognizes {w in {a, b}* | w has one or an even number of b's}.
-        Q: set[State] = {"q_0", "q_1", "q_2", "q_3", "q_4"}
-        Sigma: set[str] = {"a", "b"}
-        delta: dict[tuple[State, str], set[State]] = {
-            ("q_0", "_"): {"q_1", "q_3"},
-            ("q_1", "a"): {"q_1"},
-            ("q_1", "b"): {"q_2"},
-            ("q_2", "a"): {"q_2"},
-            ("q_3", "a"): {"q_3"},
-            ("q_3", "b"): {"q_4"},
-            ("q_4", "a"): {"q_4"},
-            ("q_4", "b"): {"q_3"},
-        }
-        q0: State = "q_0"
-        F: set[State] = {"q_2", "q_3"}
-        self.N_5 = NFA(Q, Sigma, delta, q0, F)
-
-    def test_invalid_comparison(self) -> None:
+    def test_invalid_comparison(self, nfa_only_eps_a) -> None:
         P = PDA(
             Q={"q_0"},
             Sigma={"a"},
@@ -359,35 +321,45 @@ class TestNFAComparison:
             F=set(),
         )
         with pytest.raises(TypeError) as excinfo:
-            self.N_1.compare(P)
+            nfa_only_eps_a.compare(P)
         assert "Invalid comparison type." in str(excinfo.value)
 
-    def test_mismatched_alphabets(self) -> None:
-        self.N_2._input_alphabet = {"0", "1"}
+    def test_mismatched_alphabets(self, nfa_only_eps_a, nfa_ends_with_aa) -> None:
+        nfa_only_eps_a._input_alphabet = {"a"}
         with pytest.raises(ValueError) as excinfo:
-            self.N_1.compare(self.N_2)
+            nfa_only_eps_a.compare(nfa_ends_with_aa)
         assert "Mismatched input alphabets." in str(excinfo.value)
 
-    def test_disjoint(self) -> None:
-        assert self.N_1.is_disjoint(self.N_2)
+    def test_disjoint(self, nfa_only_eps_a, nfa_ends_with_aa) -> None:
+        assert nfa_only_eps_a.is_disjoint(nfa_ends_with_aa)
 
-    def test_partial_intersection(self) -> None:
-        assert self.N_2.partially_intersects(self.N_4)
+    def test_partial_intersection(self, nfa_ends_with_aa, nfa_one_or_even_b) -> None:
+        assert nfa_ends_with_aa.partially_intersects(nfa_one_or_even_b)
 
-    def test_subset_1(self) -> None:
-        assert self.N_1 < self.N_4 and self.N_1 <= self.N_4 and self.N_1 != self.N_4
+    def test_subset_1(self, nfa_only_eps_a, nfa_one_or_even_b) -> None:
+        assert nfa_only_eps_a < nfa_one_or_even_b
+        assert nfa_only_eps_a <= nfa_one_or_even_b
+        assert nfa_only_eps_a != nfa_one_or_even_b
 
-    def test_superset_1(self) -> None:
-        assert self.N_4 > self.N_1 and self.N_4 >= self.N_1 and self.N_1 != self.N_4
+    def test_superset_1(self, nfa_only_eps_a, nfa_one_or_even_b) -> None:
+        assert nfa_one_or_even_b > nfa_only_eps_a
+        assert nfa_one_or_even_b >= nfa_only_eps_a
+        assert nfa_one_or_even_b != nfa_only_eps_a
 
-    def test_subset_2(self) -> None:
-        assert self.N_2 < self.N_3 and self.N_2 <= self.N_3 and self.N_2 != self.N_3
+    def test_subset_2(self, nfa_ends_with_aa, nfa_substring_aa_aba) -> None:
+        assert nfa_ends_with_aa < nfa_substring_aa_aba
+        assert nfa_ends_with_aa <= nfa_substring_aa_aba
+        assert nfa_ends_with_aa != nfa_substring_aa_aba
 
-    def test_superset_2(self) -> None:
-        assert self.N_3 > self.N_2 and self.N_3 >= self.N_2 and self.N_2 != self.N_3
+    def test_superset_2(self, nfa_ends_with_aa, nfa_substring_aa_aba) -> None:
+        assert nfa_substring_aa_aba > nfa_ends_with_aa
+        assert nfa_substring_aa_aba >= nfa_ends_with_aa
+        assert nfa_substring_aa_aba != nfa_ends_with_aa
 
-    def test_equality(self) -> None:
-        assert self.N_4 == self.N_5 and self.N_4 <= self.N_5 and self.N_5 >= self.N_4
+    def test_equality(self, nfa_one_or_even_b, nfa_one_or_even_b_alt) -> None:
+        assert nfa_one_or_even_b == nfa_one_or_even_b_alt
+        assert nfa_one_or_even_b >= nfa_one_or_even_b_alt
+        assert nfa_one_or_even_b <= nfa_one_or_even_b_alt
 
 
 class TestNFAToDFAConversion:
